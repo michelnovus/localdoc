@@ -5,12 +5,21 @@ import tomllib
 from tomllib import TOMLDecodeError
 
 
-def new(socket: str = "127.0.0.2", port: int = 21980) -> str:
-    """Genera la configuración predeterminada del programa en
-    formato TOML como una cadena."""
+def new(
+    socket: str = "127.0.0.2",
+    port: int = 21980,
+    package_dir: str = "~/.local/localdoc",
+) -> str:
+    """Genera la configuración del programa en formato TOML como una cadena."""
 
     conf: list[str] = list()
-    conf.append("# Configuración predeterminada del programa 'localdoc'")
+    conf.append("# Configuración del programa 'localdoc'.")
+    conf.append("# Éste archivo se regenera de vez en cuando, los")
+    conf.append("# valores que se hallan asignado en las diferentes")
+    conf.append("# secciones se mantendrán, excepto la sección [runtime].")
+    conf.append("")
+    conf.append("[user]")
+    conf.append(f'PACKAGE_DIR = "{package_dir}"')
     conf.append("# En construcción...")
     conf.append("")
     conf.append("# ----------------------------------------------------")
@@ -46,8 +55,15 @@ class _ModuleTests(unittest.TestCase):
 
     def test_new(self):
         addr, port = ("127.0.0.2", 1540)
+        packages_directory = "/un/directorio/destino"
         expected_data = (
-            "# Configuración predeterminada del programa 'localdoc'\n"
+            "# Configuración del programa 'localdoc'.\n"
+            "# Éste archivo se regenera de vez en cuando, los\n"
+            "# valores que se hallan asignado en las diferentes\n"
+            "# secciones se mantendrán, excepto la sección [runtime].\n"
+            "\n"
+            "[user]\n"
+            f'PACKAGE_DIR = "{packages_directory}"\n'
             "# En construcción...\n"
             "\n"
             "# ----------------------------------------------------\n"
@@ -61,7 +77,7 @@ class _ModuleTests(unittest.TestCase):
             "\n"
             "# ----------------------------------------------------\n"
         )
-        new_config = new(addr, port)
+        new_config = new(addr, port, packages_directory)
         self.assertEqual(new_config, expected_data)
 
     def test_Config(self):
