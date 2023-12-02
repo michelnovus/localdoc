@@ -19,7 +19,10 @@ def new(
     conf.append("# secciones se mantendrán, excepto la sección [runtime].")
     conf.append("")
     conf.append("[user]")
+    conf.append("")
+    conf.append("# Indica dónde se guardarán los paquetes")
     conf.append(f'PACKAGE_DIR = "{package_dir}"')
+    conf.append("")
     conf.append("# En construcción...")
     conf.append("")
     conf.append("# ----------------------------------------------------")
@@ -28,7 +31,7 @@ def new(
     conf.append("")
     conf.append("[runtime]")
     conf.append('SOCK_TYPE = "TCP"')
-    conf.append(f"SOCK_ADDRESS = {socket}")
+    conf.append(f'SOCK_ADDRESS = "{socket}"')
     conf.append(f"SOCK_PORT = {port}")
     conf.append("")
     conf.append("# ----------------------------------------------------")
@@ -49,6 +52,8 @@ class Config(object):
         self.socket_addr = self._data["runtime"]["SOCK_ADDRESS"]
         self.socket_port = self._data["runtime"]["SOCK_PORT"]
 
+        self.package_dir = self._data["user"]["PACKAGE_DIR"]
+
 
 class _ModuleTests(unittest.TestCase):
     """Tests unitarios de módulo config.py"""
@@ -63,7 +68,10 @@ class _ModuleTests(unittest.TestCase):
             "# secciones se mantendrán, excepto la sección [runtime].\n"
             "\n"
             "[user]\n"
+            "\n"
+            "# Indica dónde se guardarán los paquetes\n"
             f'PACKAGE_DIR = "{packages_directory}"\n'
+            "\n"
             "# En construcción...\n"
             "\n"
             "# ----------------------------------------------------\n"
@@ -72,7 +80,7 @@ class _ModuleTests(unittest.TestCase):
             "\n"
             "[runtime]\n"
             'SOCK_TYPE = "TCP"\n'
-            f"SOCK_ADDRESS = {addr}\n"
+            f'SOCK_ADDRESS = "{addr}"\n'
             f"SOCK_PORT = {port}\n"
             "\n"
             "# ----------------------------------------------------\n"
@@ -82,6 +90,8 @@ class _ModuleTests(unittest.TestCase):
 
     def test_Config(self):
         toml = (
+            "[user]\n"
+            'PACKAGE_DIR = "/un/directorio"\n'
             "[runtime]\n"
             'SOCK_TYPE = "TCP"\n'
             'SOCK_ADDRESS = "127.0.0.3"\n'
@@ -91,3 +101,11 @@ class _ModuleTests(unittest.TestCase):
         self.assertEqual(config.socket_type, "TCP")
         self.assertEqual(config.socket_addr, "127.0.0.3")
         self.assertEqual(config.socket_port, 1540)
+
+    def test_new_in_Config(self):
+        toml = new(socket="127.0.0.10", port=5566, package_dir="/el/dir")
+        config = Config(toml)
+        self.assertEqual(config.socket_type, "TCP")
+        self.assertEqual(config.socket_addr, "127.0.0.10")
+        self.assertEqual(config.socket_port, 5566)
+        self.assertEqual(config.package_dir, "/el/dir")
