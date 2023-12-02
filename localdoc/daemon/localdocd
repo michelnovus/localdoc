@@ -1,0 +1,8 @@
+#!/usr/bin/python3
+# [GLP3] Copyright (C) 2024  Michel Novus
+
+import time
+
+# Mantiene el proceso vivo por 10 segundos
+for i in range(10):
+    time.sleep(1)
