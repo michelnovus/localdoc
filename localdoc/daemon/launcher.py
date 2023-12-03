@@ -1,4 +1,5 @@
 # [GLP3] Copyright (C) 2024  Michel Novus
+"""Daemonizador de localdocd."""
 
 import subprocess
 import os.path

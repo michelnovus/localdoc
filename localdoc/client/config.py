@@ -1,4 +1,5 @@
 # [GLP3] Copyright (C) 2024  Michel Novus
+"""Guarda las definiciones del manejador del archivo de configuración."""
 
 import unittest
 import tomllib
