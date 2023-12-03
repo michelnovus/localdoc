@@ -8,20 +8,27 @@ from client import console, run_client
 from client import config
 
 
-CONFIG_DIRPATH = os.path.join(os.getenv("HOME", os.getcwd()), ".local/localdoc")
+# -------------- [Constantes predeterminadas] --------------
+CONFIG_DIRPATH = os.path.join(
+    os.getenv("HOME", os.getcwd()), ".config/localdoc"
+)
 CONFIG_FILEPATH = os.path.join(CONFIG_DIRPATH, "localdoc.toml")
 SOCKET, PORT = ("127.0.0.2", 21980)
-PACKAGE_DIRECTORY = os.path.join(CONFIG_DIRPATH, "packages")
+PACKAGE_DIRECTORY = os.path.join(
+    os.getenv("HOME", os.getcwd()), ".local/localdoc/packages"
+)
+# -----------------------------------------------------------
 
 
 def main() -> None:
-    _make_config_dirs()
-    _make_config_file_if_not_exist()
+    _make_config_directory()
+    _make_config_file()
     configuration: config.Config = _load_configuration()
+    _make_package_directory(configuration.package_dir)
 
 
-def _make_config_dirs() -> None:
-    """Crea los directorios de configuración y de paquetes."""
+def _make_config_directory() -> None:
+    """Crea el directorio de configuración si no existe."""
     if not os.path.exists(CONFIG_DIRPATH):
         try:
             os.makedirs(CONFIG_DIRPATH, exist_ok=True)
@@ -34,9 +41,13 @@ def _make_config_dirs() -> None:
                 "[ [red]FAIL[/red] ] No tiene permisos en el sistema "
                 "para crear el directorio de configuración!"
             )
-    if not os.path.exists(PACKAGE_DIRECTORY):
+
+
+def _make_package_directory(path: str) -> None:
+    """Crea el directorio de los paquetes si no existe."""
+    if not os.path.exists(path):
         try:
-            os.makedirs(PACKAGE_DIRECTORY, exist_ok=True)
+            os.makedirs(path, exist_ok=True)
             console.print(
                 "[  [green]OK[/green]  ] Se creó el directorio de "
                 "de paquetes del programa."
@@ -48,7 +59,7 @@ def _make_config_dirs() -> None:
             )
 
 
-def _make_config_file_if_not_exist() -> None:
+def _make_config_file() -> None:
     """Crea el archivo de configuración si el archivo no existe.
 
     Cierra el proceso ante fallos.
