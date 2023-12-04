@@ -4,8 +4,9 @@ import sys
 import os
 import os.path
 
+import config
+from ipc import IPCType, IPC
 from client import console, run_client
-from client import config
 
 
 # -------------- [Constantes predeterminadas] --------------
@@ -13,7 +14,7 @@ CONFIG_DIRPATH = os.path.join(
     os.getenv("HOME", os.getcwd()), ".config/localdoc"
 )
 CONFIG_FILEPATH = os.path.join(CONFIG_DIRPATH, "localdoc.toml")
-SOCKET, PORT = ("127.0.0.2", 21980)
+SOCKET = "/tmp/localdoc.socket"
 PACKAGE_DIRECTORY = os.path.join(
     os.getenv("HOME", os.getcwd()), ".local/localdoc/packages"
 )
@@ -66,7 +67,7 @@ def _make_config_file() -> None:
     """
     try:
         with open(CONFIG_FILEPATH, "xt") as cfg_file:
-            cfg_file.write(config.new(SOCKET, PORT, PACKAGE_DIRECTORY))
+            cfg_file.write(config.new(SOCKET, PACKAGE_DIRECTORY))
     except FileExistsError:
         pass
     except OSError:
@@ -96,6 +97,11 @@ def _load_configuration() -> config.Config:
         )
         sys.exit(1)
     return configuration
+
+
+def localdocd_is_running(socket_path: str) -> bool:
+    """Comprueba si el daemon esta ejecutandose."""
+    return True
 
 
 if __name__ == "__main__":

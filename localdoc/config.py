@@ -7,8 +7,7 @@ from tomllib import TOMLDecodeError
 
 
 def new(
-    socket: str = "127.0.0.2",
-    port: int = 21980,
+    socket: str = "/tmp/localdoc.socket",
     package_dir: str = "~/.local/localdoc",
 ) -> str:
     """Genera la configuración del programa en formato TOML como una cadena."""
@@ -31,9 +30,8 @@ def new(
     conf.append("# ----------------------------------------------------")
     conf.append("")
     conf.append("[runtime]")
-    conf.append('SOCK_TYPE = "TCP"')
-    conf.append(f'SOCK_ADDRESS = "{socket}"')
-    conf.append(f"SOCK_PORT = {port}")
+    conf.append('SOCKET_TYPE = "AF_UNIX"')
+    conf.append(f'SOCKET_PATH = "{socket}"')
     conf.append("")
     conf.append("# ----------------------------------------------------")
     conf.append("")
@@ -49,9 +47,8 @@ class Config(object):
 
     def __init__(self, config_data: str) -> None:
         self._data = tomllib.loads(config_data)
-        self.socket_type = self._data["runtime"]["SOCK_TYPE"]
-        self.socket_addr = self._data["runtime"]["SOCK_ADDRESS"]
-        self.socket_port = self._data["runtime"]["SOCK_PORT"]
+        self.socket_type = self._data["runtime"]["SOCKET_TYPE"]
+        self.socket_path = self._data["runtime"]["SOCKET_PATH"]
 
         self.package_dir = self._data["user"]["PACKAGE_DIR"]
 
@@ -60,7 +57,7 @@ class _ModuleTests(unittest.TestCase):
     """Tests unitarios de módulo config.py"""
 
     def test_new(self):
-        addr, port = ("127.0.0.2", 1540)
+        path = "/tmp/localdoc.socket"
         packages_directory = "/un/directorio/destino"
         expected_data = (
             "# Configuración del programa 'localdoc'.\n"
@@ -80,13 +77,12 @@ class _ModuleTests(unittest.TestCase):
             "# ----------------------------------------------------\n"
             "\n"
             "[runtime]\n"
-            'SOCK_TYPE = "TCP"\n'
-            f'SOCK_ADDRESS = "{addr}"\n'
-            f"SOCK_PORT = {port}\n"
+            'SOCKET_TYPE = "AF_UNIX"\n'
+            f'SOCKET_PATH = "{path}"\n'
             "\n"
             "# ----------------------------------------------------\n"
         )
-        new_config = new(addr, port, packages_directory)
+        new_config = new(path, packages_directory)
         self.assertEqual(new_config, expected_data)
 
     def test_Config(self):
@@ -94,19 +90,16 @@ class _ModuleTests(unittest.TestCase):
             "[user]\n"
             'PACKAGE_DIR = "/un/directorio"\n'
             "[runtime]\n"
-            'SOCK_TYPE = "TCP"\n'
-            'SOCK_ADDRESS = "127.0.0.3"\n'
-            "SOCK_PORT = 1540\n"
+            'SOCKET_TYPE = "AF_UNIX"\n'
+            'SOCKET_PATH = "/tmp/localdoc.socket"\n'
         )
         config = Config(toml)
-        self.assertEqual(config.socket_type, "TCP")
-        self.assertEqual(config.socket_addr, "127.0.0.3")
-        self.assertEqual(config.socket_port, 1540)
+        self.assertEqual(config.socket_type, "AF_UNIX")
+        self.assertEqual(config.socket_path, "/tmp/localdoc.socket")
 
     def test_new_in_Config(self):
-        toml = new(socket="127.0.0.10", port=5566, package_dir="/el/dir")
+        toml = new(socket="/tmp/localdoc.socket", package_dir="/el/dir")
         config = Config(toml)
-        self.assertEqual(config.socket_type, "TCP")
-        self.assertEqual(config.socket_addr, "127.0.0.10")
-        self.assertEqual(config.socket_port, 5566)
+        self.assertEqual(config.socket_type, "AF_UNIX")
+        self.assertEqual(config.socket_path, "/tmp/localdoc.socket")
         self.assertEqual(config.package_dir, "/el/dir")
