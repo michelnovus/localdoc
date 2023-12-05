@@ -18,20 +18,36 @@ def arguments() -> dict[str, Any]:
         _print_help()
         return {}
     else:
-        for i in range(5):
-            args.append("")
+        args.extend("" * 5)
 
     match args[1]:
         case "list":
             return {"CMD": "list"}
         case "serve":
-            return {"CMD": "serve"}
+            serve_command = {"CMD": "serve", "OPT": [], "ARG": []}
+            if "--open" in args:
+                args.remove("--open")
+                serve_command["OPT"].append("open")
+            for arg in args[2:]:
+                serve_command["ARG"].append(arg)
+            return serve_command
         case "close":
-            return {"CMD": "close"}
+            close_command = {"CMD": "close", "ARG": []}
+            for arg in args[2:]:
+                close_command["ARG"].append(arg)
+            return close_command
         case "install":
-            return {"CMD": "install"}
+            install_command = {"CMD": "install", "ARG": []}
+            for arg in args[2:]:
+                install_command["ARG"].append(arg)
+            return install_command
         case "remove":
-            return {"CMD": "remove"}
+            remove_command = {"CMD": "remove", "ARG": []}
+            for arg in args[2:]:
+                remove_command["ARG"].append(arg)
+            return remove_command
+        case "close-daemon":
+            return {"CMD": "close-daemon"}
         case "-h" | "--help" | "help":
             _print_help()
             return {}
@@ -48,17 +64,22 @@ def _print_help() -> None:
         "[u][b]Uso:[/u] localdoc[/b] COMANDO [ argumentos ] [ --opciones ]",
         "",
         "[u b]Comandos:[/]",
-        "  [b]list[/]          Lista la documentación disponible",
-        "  [b]serve[/]         Carga la documentación nombrada",
-        "  [b]close[/]         Cierra la documentación nombrada",
-        "  [b]install[/]       Instala la documentación en la base de datos",
-        "  [b]remove[/]        Remueve la documentación de la base de datos",
-        "  [b]help[/]          Muestra esta ayuda",
+        "  [b]list[/]             Muestra una lista de toda la documentación",
+        "                   disponible en la base de datos.",
+        "  [b]serve[/]            Inicia el servicio de documentación en",
+        "                   un puerto, utilizando el argumento.",
+        "                   proporcionado si esta disponible (ver [b]list[/]).",
+        "  [b]close[/]            Cierra el o los servicios que se pasen",
+        "                   como argumento.",
+        "  [b]install[/]          Instala la documentación en la base de datos.",
+        "  [b]remove[/]           Remueve la documentación de la base de datos.",
+        "  [b]close-daemon[/]     Mata el proceso daemon.",
+        "  [b]help[/]             Muestra esta ayuda.",
         "",
         "[u b]Opciones:[/]",
-        "  [b]--open[/]        Abre la documentación en el navegador",
-        "  [b]--close-daemon[/]Mata al proceso daemon",
-        "  [b]-h, --help[/]    Alias de help",
+        "  [b]--open[/]           Abre el servicio en el navegador, acompaña",
+        "                   al comando [b]serve[/].",
+        "  [b]-h, --help[/]       Alias de [b]help[/].",
         "",
     ]
     for string in text:
