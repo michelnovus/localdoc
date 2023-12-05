@@ -8,25 +8,30 @@ from tempfile import mkdtemp
 from default import CONFIG_DIRPATH, CONFIG_FILEPATH, PACKAGE_DIRECTORY
 import config
 from ipc import IPC, IPCType
-from daemon import daemonize
+from daemon import daemonize, clear_tempdir, localdocd_is_running
 from client import console, run_client
 
 
 def main() -> None:
+    # ---------- [etapa de preparación inicial] ----------
     _make_config_directory()
     _make_config_file()
-    configuration: config.Config = _load_configuration()
-    if configuration.socket_path == "undefined":
+    conf: config.Config = _load_configuration()
+    if not localdocd_is_running(conf.socket_path):
+        clear_tempdir(os.path.split(conf.socket_path)[0])
         socket_dir = mkdtemp(prefix="localdoc-", dir="/tmp")
+        os.chmod(socket_dir, 0o700)
         with open(CONFIG_FILEPATH, "wt") as config_file:
             config_file.write(
-                config.new(socket=socket_dir, package_dir=PACKAGE_DIRECTORY)
+                config.new(
+                    socket=f"{socket_dir}/localdoc.socket",
+                    package_dir=PACKAGE_DIRECTORY,
+                )
             )
-        configuration: config.Config = _load_configuration()
-    if not localdocd_is_running(configuration.socket_path):
+        conf: config.Config = _load_configuration()
         daemonize()
-
-    _make_package_directory(configuration.package_dir)
+    _make_package_directory(conf.package_dir)
+    # ----------------------------------------------------
 
 
 def _make_config_directory() -> None:
@@ -42,22 +47,6 @@ def _make_config_directory() -> None:
             console.print(
                 "[ [red]FAIL[/red] ] No tiene permisos en el sistema "
                 "para crear el directorio de configuración!"
-            )
-
-
-def _make_package_directory(path: str) -> None:
-    """Crea el directorio de los paquetes si no existe."""
-    if not os.path.exists(path):
-        try:
-            os.makedirs(path, exist_ok=True)
-            console.print(
-                "[  [green]OK[/green]  ] Se creó el directorio de "
-                "de paquetes del programa."
-            )
-        except PermissionError:
-            console.print(
-                "[ [red]FAIL[/red] ] No tiene permisos en el sistema "
-                "para crear el directorio de paquetes!"
             )
 
 
@@ -80,6 +69,22 @@ def _make_config_file() -> None:
         sys.exit(1)
 
 
+def _make_package_directory(path: str) -> None:
+    """Crea el directorio de los paquetes si no existe."""
+    if not os.path.exists(path):
+        try:
+            os.makedirs(path, exist_ok=True)
+            console.print(
+                "[  [green]OK[/green]  ] Se creó el directorio de "
+                "de paquetes del programa."
+            )
+        except PermissionError:
+            console.print(
+                "[ [red]FAIL[/red] ] No tiene permisos en el sistema "
+                "para crear el directorio de paquetes!"
+            )
+
+
 def _load_configuration() -> config.Config:
     """Carga la configuración desde CONFIG_FILEPATH
     y devuelve el objeto Config.
@@ -100,21 +105,6 @@ def _load_configuration() -> config.Config:
         )
         sys.exit(1)
     return configuration
-
-
-def localdocd_is_running(socket_path: str) -> bool:
-    """Comprueba si el daemon esta ejecutandose."""
-    try:
-        ipc = IPC(socket_path, IPCType.CLIENT)
-        response = ipc.communicate({"localdocd_status": ""})
-    except FileNotFoundError:
-        return False
-    except ConnectionRefusedError:
-        return False
-    if response["localdocd_status"] == "alive":
-        return True
-    else:
-        return False
 
 
 if __name__ == "__main__":

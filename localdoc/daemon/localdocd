@@ -15,7 +15,6 @@ del localdoc_root
 import threading
 import time
 
-from functools import partial
 from default import CONFIG_FILEPATH
 from config import Config
 from ipc import IPC, IPCType
@@ -38,9 +37,11 @@ class KeepAlive(threading.Thread):
 if __name__ == "__main__":
     with open(CONFIG_FILEPATH, "rt") as cfg_file:
         configuration = Config(cfg_file.read())
+        if not configuration.socket_path.startswith("/tmp/localdoc"):
+            sys.exit(1)
     ipc = IPC(configuration.socket_path, IPCType.SERVER)
 
-    _keep_alive = KeepAlive(25)
+    _keep_alive = KeepAlive(5)
     _keep_alive.start()
     while _keep_alive.status:
         recv = ipc.wait()
