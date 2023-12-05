@@ -37,6 +37,8 @@ def main() -> None:
     _make_package_directory(conf.package_dir)
     # -----------------------------------------------------------------
 
+    run_client(configuration=conf)
+
 
 def _make_config_directory() -> None:
     """Crea el directorio de configuración si no existe."""

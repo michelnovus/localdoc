@@ -2,9 +2,16 @@
 """Analiza los argumentos que se pasan al cliente en la Línea de Comandos."""
 
 from typing import Any
+from enum import Enum
 import sys
 
 from .console import console
+
+
+CMD = Enum(
+    "CMD", ["LIST", "SERVE", "CLOSE", "INSTALL", "REMOVE", "CLOSE_DAEMON"]
+)
+OPT = Enum("OPT", ["OPEN"])
 
 
 def arguments() -> dict[str, Any]:
@@ -12,16 +19,16 @@ def arguments() -> dict[str, Any]:
     ejecutar el proceso.
 
     Formato de salida:
-    - siempre {"CMD": "nombre-comando"}
+    - siempre {"CMD": CMD.TYPE}
     - opcional {..., "ARG": [], "OPT": []}
 
     Cada comando tiene por salida:
-    - list: {"CMD": "list"}
-    - serve: {"CMD": "serve", "OPT": [], "ARG": []}
-    - close: {"CMD": "close", "ARG": []}
-    - install: {"CMD": "install", "ARG": []}
-    - remove: {"CMD": "remove", "ARG": []}
-    - close-daemon: {"CMD": "close-daemon"}
+    - list: {"CMD": CMD.LIST}
+    - serve: {"CMD": CMD.SERVE, "OPT": [], "ARG": []}
+    - close: {"CMD": CMD.CLOSE, "ARG": []}
+    - install: {"CMD": CMD.INSTALL, "ARG": []}
+    - remove: {"CMD": CMD.REMOVE, "ARG": []}
+    - close-daemon: {"CMD": CMD.CLOSE_DAEMON}
 
     El dict está vacío si no existe argumento válido.
     """
@@ -34,32 +41,32 @@ def arguments() -> dict[str, Any]:
 
     match args[1]:
         case "list":
-            return {"CMD": "list"}
+            return {"CMD": CMD.LIST}
         case "serve":
-            serve_command = {"CMD": "serve", "OPT": [], "ARG": []}
+            serve_command = {"CMD": CMD.SERVE, "OPT": [], "ARG": []}
             if "--open" in args:
                 args.remove("--open")
-                serve_command["OPT"].append("open")
+                serve_command["OPT"].append(OPT.OPEN)
             for arg in args[2:]:
                 serve_command["ARG"].append(arg)
             return serve_command
         case "close":
-            close_command = {"CMD": "close", "ARG": []}
+            close_command = {"CMD": CMD.CLOSE, "ARG": []}
             for arg in args[2:]:
                 close_command["ARG"].append(arg)
             return close_command
         case "install":
-            install_command = {"CMD": "install", "ARG": []}
+            install_command = {"CMD": CMD.INSTALL, "ARG": []}
             for arg in args[2:]:
                 install_command["ARG"].append(arg)
             return install_command
         case "remove":
-            remove_command = {"CMD": "remove", "ARG": []}
+            remove_command = {"CMD": CMD.REMOVE, "ARG": []}
             for arg in args[2:]:
                 remove_command["ARG"].append(arg)
             return remove_command
         case "close-daemon":
-            return {"CMD": "close-daemon"}
+            return {"CMD": CMD.CLOSE_DAEMON}
         case "-h" | "--help" | "help":
             _print_help()
             return {}
