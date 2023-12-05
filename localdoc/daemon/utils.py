@@ -3,7 +3,7 @@
 import os
 import os.path
 
-from ..ipc import IPCType, IPC
+from ipc import IPCType, IPC
 
 
 def clear_tempdir(socket_dir: str) -> None:
