@@ -3,28 +3,29 @@
 import sys
 import os
 import os.path
+from tempfile import mkdtemp
 
+from default import CONFIG_DIRPATH, CONFIG_FILEPATH, PACKAGE_DIRECTORY
 import config
-from ipc import IPCType, IPC
+from ipc import IPC, IPCType
+from daemon import daemonize
 from client import console, run_client
-
-
-# -------------- [Constantes predeterminadas] --------------
-CONFIG_DIRPATH = os.path.join(
-    os.getenv("HOME", os.getcwd()), ".config/localdoc"
-)
-CONFIG_FILEPATH = os.path.join(CONFIG_DIRPATH, "localdoc.toml")
-SOCKET = "/tmp/localdoc.socket"
-PACKAGE_DIRECTORY = os.path.join(
-    os.getenv("HOME", os.getcwd()), ".local/localdoc/packages"
-)
-# -----------------------------------------------------------
 
 
 def main() -> None:
     _make_config_directory()
     _make_config_file()
     configuration: config.Config = _load_configuration()
+    if configuration.socket_path == "undefined":
+        socket_dir = mkdtemp(prefix="localdoc-", dir="/tmp")
+        with open(CONFIG_FILEPATH, "wt") as config_file:
+            config_file.write(
+                config.new(socket=socket_dir, package_dir=PACKAGE_DIRECTORY)
+            )
+        configuration: config.Config = _load_configuration()
+    if not localdocd_is_running(configuration.socket_path):
+        daemonize()
+
     _make_package_directory(configuration.package_dir)
 
 
@@ -67,7 +68,9 @@ def _make_config_file() -> None:
     """
     try:
         with open(CONFIG_FILEPATH, "xt") as cfg_file:
-            cfg_file.write(config.new(SOCKET, PACKAGE_DIRECTORY))
+            cfg_file.write(
+                config.new(socket="undefined", package_dir=PACKAGE_DIRECTORY)
+            )
     except FileExistsError:
         pass
     except OSError:
@@ -101,7 +104,17 @@ def _load_configuration() -> config.Config:
 
 def localdocd_is_running(socket_path: str) -> bool:
     """Comprueba si el daemon esta ejecutandose."""
-    return True
+    try:
+        ipc = IPC(socket_path, IPCType.CLIENT)
+        response = ipc.communicate({"localdocd_status": ""})
+    except FileNotFoundError:
+        return False
+    except ConnectionRefusedError:
+        return False
+    if response["localdocd_status"] == "alive":
+        return True
+    else:
+        return False
 
 
 if __name__ == "__main__":

@@ -1,8 +1,51 @@
 #!/usr/bin/python3
 # [GLP3] Copyright (C) 2024  Michel Novus
 
+# ----- [inserta la raiz de localdoc en el path] -----
+import sys
+import os
+import os.path
+
+localdoc_root = os.path.split(os.path.split(__file__)[0])[0]
+sys.path.pop(0)
+sys.path.insert(0, localdoc_root)
+del localdoc_root
+# ----------------------------------------------------
+
+import threading
 import time
 
-# Mantiene el proceso vivo por 10 segundos
-for i in range(10):
-    time.sleep(1)
+from functools import partial
+from default import CONFIG_FILEPATH
+from config import Config
+from ipc import IPC, IPCType
+
+
+class KeepAlive(threading.Thread):
+    """Mantiene el atributo 'status' en True hasta 'value' tiempo, lo cambia
+    a False pasado el mismo y termina el Thread."""
+
+    def __init__(self, value: float, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._value = value
+        self.status = True
+
+    def run(self) -> None:
+        time.sleep(self._value)
+        self.status = False
+
+
+if __name__ == "__main__":
+    with open(CONFIG_FILEPATH, "rt") as cfg_file:
+        configuration = Config(cfg_file.read())
+    ipc = IPC(configuration.socket_path, IPCType.SERVER)
+
+    _keep_alive = KeepAlive(25)
+    _keep_alive.start()
+    while _keep_alive.status:
+        recv = ipc.wait()
+        if "localdocd_status" in recv.keys():
+            ipc.reply({"localdocd_status": "alive"})
+            continue
+        ipc.reply({"response": "None"})
+    ipc.close()

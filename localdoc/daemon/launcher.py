@@ -19,9 +19,9 @@ def daemonize() -> None:
     subprocess.Popen(
         [localdocd_file],
         shell=False,
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+        # stdin=subprocess.DEVNULL,
+        # stdout=subprocess.DEVNULL,
+        # stderr=subprocess.DEVNULL,
         close_fds=True,
         cwd="/",
     )
