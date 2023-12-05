@@ -11,6 +11,18 @@ def arguments() -> dict[str, Any]:
     """Devuelve un dict que contiene la tarea y los datos que debe
     ejecutar el proceso.
 
+    Formato de salida:
+    - siempre {"CMD": "nombre-comando"}
+    - opcional {..., "ARG": [], "OPT": []}
+
+    Cada comando tiene por salida:
+    - list: {"CMD": "list"}
+    - serve: {"CMD": "serve", "OPT": [], "ARG": []}
+    - close: {"CMD": "close", "ARG": []}
+    - install: {"CMD": "install", "ARG": []}
+    - remove: {"CMD": "remove", "ARG": []}
+    - close-daemon: {"CMD": "close-daemon"}
+
     El dict está vacío si no existe argumento válido.
     """
     args = sys.argv
