@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # [GLP3] Copyright (C) 2024  Michel Novus
 
-# ----- [inserta la raiz de localdoc en el path] -----
+# ----------- [inserta la raiz de localdoc en PYTHONPATH] -------------
 import sys
 import os
 import os.path
@@ -10,7 +10,7 @@ localdoc_root = os.path.split(os.path.split(__file__)[0])[0]
 sys.path.pop(0)
 sys.path.insert(0, localdoc_root)
 del localdoc_root
-# ----------------------------------------------------
+# ---------------------------------------------------------------------
 
 import threading
 import time
@@ -37,9 +37,9 @@ class KeepAlive(threading.Thread):
 if __name__ == "__main__":
     with open(CONFIG_FILEPATH, "rt") as cfg_file:
         configuration = Config(cfg_file.read())
-        if not configuration.socket_path.startswith("/tmp/localdoc"):
+        if not configuration.socket_filepath.startswith("/tmp/localdoc"):
             sys.exit(1)
-    ipc = IPC(configuration.socket_path, IPCType.SERVER)
+    ipc = IPC(configuration.socket_filepath, IPCType.SERVER)
 
     _keep_alive = KeepAlive(5)
     _keep_alive.start()

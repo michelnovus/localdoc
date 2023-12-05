@@ -48,7 +48,7 @@ class Config(object):
     def __init__(self, config_data: str) -> None:
         self._data = tomllib.loads(config_data)
         self.socket_type = self._data["runtime"]["SOCKET_TYPE"]
-        self.socket_path = self._data["runtime"]["SOCKET_PATH"]
+        self.socket_filepath = self._data["runtime"]["SOCKET_PATH"]
 
         self.package_dir = self._data["user"]["PACKAGE_DIR"]
 

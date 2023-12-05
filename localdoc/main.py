@@ -7,31 +7,35 @@ from tempfile import mkdtemp
 
 from default import CONFIG_DIRPATH, CONFIG_FILEPATH, PACKAGE_DIRECTORY
 import config
-from ipc import IPC, IPCType
 from daemon import daemonize, clear_tempdir, localdocd_is_running
 from client import console, run_client
 
 
 def main() -> None:
-    # ---------- [etapa de preparación inicial] ----------
+    # -----------------------------------------------------------------
+    # Preparación del entorno de ejecución del programa.
+    # Inicializa la configuración si no existe creando los directorios
+    # predeterminados en el directorio HOME del usuario.
+    # Inicia el proceso localdocd si no está ejecutándose.
+
     _make_config_directory()
     _make_config_file()
     conf: config.Config = _load_configuration()
-    if not localdocd_is_running(conf.socket_path):
-        clear_tempdir(os.path.split(conf.socket_path)[0])
-        socket_dir = mkdtemp(prefix="localdoc-", dir="/tmp")
-        os.chmod(socket_dir, 0o700)
+    if not localdocd_is_running(conf.socket_filepath):
+        clear_tempdir(os.path.split(conf.socket_filepath)[0])
+        socket_dirpath = mkdtemp(prefix="localdoc-", dir="/tmp")
+        os.chmod(socket_dirpath, 0o700)
         with open(CONFIG_FILEPATH, "wt") as config_file:
             config_file.write(
                 config.new(
-                    socket=f"{socket_dir}/localdoc.socket",
+                    socket=f"{socket_dirpath}/localdoc.socket",
                     package_dir=PACKAGE_DIRECTORY,
                 )
             )
         conf: config.Config = _load_configuration()
         daemonize()
     _make_package_directory(conf.package_dir)
-    # ----------------------------------------------------
+    # -----------------------------------------------------------------
 
 
 def _make_config_directory() -> None:

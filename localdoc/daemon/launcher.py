@@ -12,6 +12,8 @@ def daemonize() -> None:
     """Ejecuta el archivo 'localdocd' como un proceso que se mantendrá
     vivo en segundo plano.
 
+    El proceso 'localdocd' debe ser hijo del proceso 'init' (PID 1).
+
     Lanza PermissionError si localdocd no tiene permiso de ejecución.
     """
     launcher_path = os.path.abspath(__file__)
