@@ -57,6 +57,7 @@ def _print_help() -> None:
         "",
         "[u b]Opciones:[/]",
         "  [b]--open[/]        Abre la documentación en el navegador",
+        "  [b]--close-daemon[/]Mata al proceso daemon",
         "  [b]-h, --help[/]    Alias de help",
         "",
     ]
