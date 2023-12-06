@@ -19,12 +19,12 @@ class Database(object):
         self.available_packages: list[Sequence[str]] = list()
         self.current_served_packages: dict[str, tuple[str, int]] = {}
 
-    def update(self) -> None:
-        """Actualiza los atributos del objeto."""
-        pass
-
     def get_available_packages(self) -> list[Sequence[str]]:
-        """Devuelve los paquetes disponibles de la base de datos."""
+        """Devuelve los paquetes disponibles de la base de datos.
+
+        Se espera que los paquetes no tengan espacios en sus nombres y
+        sean archivos tar. Los directorios son ignorados.
+        """
         self.available_packages.clear()
         with os.scandir(self.configuration.package_dir) as package_dir:
             for entry in package_dir:
@@ -38,6 +38,19 @@ class Database(object):
         return self.available_packages.copy()
 
     def get_served_packages(self) -> dict[str, tuple[str, int]]:
-        """Devuelve los paquetes que están servidos actualmente."""
-        self.update()
+        """Devuelve los paquetes que están servidos actualmente.
+
+        Se comunica por IPC con localdocd, envía el mensaje
+        '{"command": "get_served_packages"}' y espera por respuesta
+        {"package_name": "addr port", ...} o {} si algo falla.
+        """
+        ipc = IPC(self.configuration.socket_filepath, IPCType.CLIENT)
+        response = ipc.communicate({"command": "get_served_packages"})
+        if response != {}:
+            served_packages = {}
+            for package_name, web_socket in response.items():
+                addr, port = web_socket.split(" ")
+                served_packages[package_name] = (addr, int(port))
+            self.current_served_packages.clear()
+            self.current_served_packages.update(served_packages)
         return self.current_served_packages
