@@ -1,7 +1,6 @@
 # [GLP3] Copyright (C) 2024  Michel Novus
 
 import os
-from typing import Sequence
 
 from config import Config
 from ipc import IPCType, IPC
@@ -16,10 +15,10 @@ class Database(object):
 
     def __init__(self, configuration: Config) -> None:
         self.configuration = configuration
-        self.available_packages: list[Sequence[str]] = list()
+        self.available_packages: list[str] = list()
         self.current_served_packages: dict[str, tuple[str, int]] = {}
 
-    def get_available_packages(self) -> list[Sequence[str]]:
+    def get_available_packages(self) -> list[str]:
         """Devuelve los paquetes disponibles de la base de datos.
 
         Se espera que los paquetes no tengan espacios en sus nombres y
@@ -42,15 +41,21 @@ class Database(object):
 
         Se comunica por IPC con localdocd, envía el mensaje
         '{"command": "get_served_packages"}' y espera por respuesta
-        {"package_name": "addr port", ...} o {} si algo falla.
+        {"package_name": "addr port", ...}.
         """
         ipc = IPC(self.configuration.socket_filepath, IPCType.CLIENT)
         response = ipc.communicate({"command": "get_served_packages"})
-        if response != {}:
+        if response != {"response": "None"}:
             served_packages = {}
             for package_name, web_socket in response.items():
                 addr, port = web_socket.split(" ")
                 served_packages[package_name] = (addr, int(port))
             self.current_served_packages.clear()
             self.current_served_packages.update(served_packages)
+        elif response == {"status": "clear"}:
+            self.current_served_packages.clear()
+        elif response == {}:
+            raise RuntimeError(
+                "Ocurrió un error en la comunicación con localdocd."
+            )
         return self.current_served_packages
