@@ -1,5 +1,6 @@
 # [GLP3] Copyright (C) 2024  Michel Novus
 
+import os
 from typing import Sequence
 
 from config import Config
@@ -24,7 +25,12 @@ class Database(object):
 
     def get_available_packages(self) -> list[Sequence[str]]:
         """Devuelve los paquetes disponibles de la base de datos."""
-        self.update()
+        self.available_packages.clear()
+        with os.scandir(self.configuration.package_dir) as package_dir:
+            for entry in package_dir:
+                if entry.is_file() and ".tar" in entry.name:
+                    self.available_packages.append(entry.name)
+        self.available_packages.sort(key=str.lower)  # type: ignore
         return self.available_packages.copy()
 
     def get_served_packages(self) -> dict[str, tuple[str, int]]:
