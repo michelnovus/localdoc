@@ -28,7 +28,11 @@ class Database(object):
         self.available_packages.clear()
         with os.scandir(self.configuration.package_dir) as package_dir:
             for entry in package_dir:
-                if entry.is_file() and ".tar" in entry.name:
+                if (
+                    entry.is_file()
+                    and ".tar" in entry.name
+                    and not " " in entry.name
+                ):
                     self.available_packages.append(entry.name)
         self.available_packages.sort(key=str.lower)  # type: ignore
         return self.available_packages.copy()
