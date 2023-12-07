@@ -1,5 +1,5 @@
 # [GLP3] Copyright (C) 2024  Michel Novus
 """Define la interfáz de comunicación entre el usuario y el proceso daemon."""
 
-from .console import console
+from .console import console, Show
 from .client import run_client

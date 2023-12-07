@@ -4,7 +4,7 @@
 import sys
 
 from config import Config
-from .console import console
+from .console import console, Show
 from .arguments import OPT, CMD, arguments
 from .execution_tasks import List, Serve
 
@@ -29,5 +29,5 @@ def run_client(configuration: Config) -> None:
             Serve(configuration, args["ARG"], open_in_browser).exec()
         case _:
             # DEBUG
-            console.print("[b]EN CONSTRUCCIÓN[/]")
+            console.print(Show.warn("comando en construcción!"))
             sys.exit(0)
