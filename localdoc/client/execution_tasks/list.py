@@ -4,7 +4,6 @@ from rich.text import Text
 from rich.table import Table
 
 from client.console import console
-from ipc import IPC, IPCType
 from database import Database
 from .base_class import BaseExecClass
 
