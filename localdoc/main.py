@@ -3,12 +3,13 @@
 import sys
 import os
 import os.path
+import time
 from tempfile import mkdtemp
 
 from default import CONFIG_DIRPATH, CONFIG_FILEPATH, PACKAGE_DIRECTORY
 import config
 from daemon import daemonize, clear_tempdir, localdocd_is_running
-from client import console, run_client
+from client import console, Show, run_client
 
 
 def main() -> None:
@@ -21,7 +22,10 @@ def main() -> None:
     _make_config_directory()
     _make_config_file()
     conf: config.Config = _load_configuration()
-    if not localdocd_is_running(conf.socket_filepath):
+    if not localdocd_is_running(conf.socket_filepath) or not os.path.exists(
+        conf.socket_filepath
+    ):
+        console.print(Show.warn("No esta cargado el proceso [b]localdocd[/]."))
         clear_tempdir(os.path.split(conf.socket_filepath)[0])
         socket_dirpath = mkdtemp(prefix="localdoc-", dir="/tmp")
         os.chmod(socket_dirpath, 0o700)
@@ -33,10 +37,18 @@ def main() -> None:
                 )
             )
         conf: config.Config = _load_configuration()
+        console.print(Show.space("Intentando iniciar [b]localdocd[/]."))
         daemonize()
+        time.sleep(1)
+        if localdocd_is_running(conf.socket_filepath):
+            console.print(Show.ok("[b]localdocd[/] se inició con éxito!"))
+            console.print()
+            time.sleep(0.5)
+        else:
+            console.print(Show.fail("[b]localdocd[/] no se pudo iniciar."))
+            sys.exit(1)
     _make_package_directory(conf.package_dir)
     # -----------------------------------------------------------------
-
     run_client(configuration=conf)
 
 
@@ -46,13 +58,16 @@ def _make_config_directory() -> None:
         try:
             os.makedirs(CONFIG_DIRPATH, exist_ok=True)
             console.print(
-                "[  [green]OK[/green]  ] Se creó el directorio de "
-                "configuración de programa."
+                Show.ok(
+                    "Se creó el directorio de " "configuración de programa."
+                )
             )
         except PermissionError:
             console.print(
-                "[ [red]FAIL[/red] ] No tiene permisos en el sistema "
-                "para crear el directorio de configuración!"
+                Show.fail(
+                    "No tiene permisos en el sistema "
+                    "para crear el directorio de configuración!"
+                )
             )
 
 
@@ -66,12 +81,11 @@ def _make_config_file() -> None:
             cfg_file.write(
                 config.new(socket="undefined", package_dir=PACKAGE_DIRECTORY)
             )
+        console.print(Show.ok("Creado nuevo archivo de configuración."))
     except FileExistsError:
         pass
     except OSError:
-        console.print(
-            "[ [red]FAIL[/red] ] Error al crear el archivo de configuración"
-        )
+        console.print(Show.fail("Error al crear el archivo de configuración."))
         sys.exit(1)
 
 
@@ -81,13 +95,16 @@ def _make_package_directory(path: str) -> None:
         try:
             os.makedirs(path, exist_ok=True)
             console.print(
-                "[  [green]OK[/green]  ] Se creó el directorio de "
-                "de paquetes del programa."
+                Show.ok(
+                    " Se creó el directorio de " "de paquetes del programa."
+                )
             )
         except PermissionError:
             console.print(
-                "[ [red]FAIL[/red] ] No tiene permisos en el sistema "
-                "para crear el directorio de paquetes!"
+                Show.fail(
+                    "No tiene permisos en el sistema "
+                    "para crear el directorio de paquetes!"
+                )
             )
 
 
@@ -101,14 +118,10 @@ def _load_configuration() -> config.Config:
         with open(CONFIG_FILEPATH, "rt") as cfg_file:
             configuration = config.Config(cfg_file.read())
     except OSError:
-        console.print(
-            "[ [red]FAIL[/red] ] Error al abrir el archivo de configuración"
-        )
+        console.print(Show.fail("Error al abrir el archivo de configuración."))
         sys.exit(1)
     except config.TOMLDecodeError:
-        console.print(
-            "[ [red]FAIL[/red] ] El archivo de configuración no es válido!"
-        )
+        console.print(Show.fail("El archivo de configuración no es válido!"))
         sys.exit(1)
     return configuration
 
