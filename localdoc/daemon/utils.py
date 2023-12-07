@@ -10,7 +10,7 @@ def clear_tempdir(socket_dir: str) -> None:
     """Limpia el directorio /tmp de rastros de antiguos procesos de localdoc."""
     if socket_dir.startswith("/tmp/localdoc"):
         try:
-            os.rmdir(os.path.split(socket_dir)[0])
+            os.rmdir(socket_dir)
         except FileNotFoundError:
             pass
         except OSError:
