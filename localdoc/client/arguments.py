@@ -34,7 +34,6 @@ def arguments() -> dict[str, Any]:
     """
     args = sys.argv
     if len(args) == 1:
-        _print_help()
         return {}
     else:
         args.extend("" * 5)
@@ -68,16 +67,15 @@ def arguments() -> dict[str, Any]:
         case "close-daemon":
             return {"CMD": CMD.CLOSE_DAEMON}
         case "-h" | "--help" | "help":
-            _print_help()
-            return {}
+            print_help()
+            sys.exit(0)
         case _:
             _invalid_command_notify(args[1], "cmd")
             console.print()
-            _print_help()
             return {}
 
 
-def _print_help() -> None:
+def print_help() -> None:
     """Imprime la pantalla de ayuda."""
     text = [
         "[u][b]Uso:[/u] localdoc[/b] COMANDO [ argumentos ] [ --opciones ]",

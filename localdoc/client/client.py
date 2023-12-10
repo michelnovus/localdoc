@@ -5,7 +5,7 @@ import sys
 
 from config import Config
 from .console import console, Show
-from .arguments import OPT, CMD, arguments
+from .arguments import OPT, CMD, arguments, print_help
 from .execution_tasks import List, Serve
 
 
@@ -13,6 +13,7 @@ def run_client(configuration: Config) -> None:
     """Ejecuta el proceso interactivo."""
     args = arguments()
     if len(args) == 0:
+        print_help()
         sys.exit(1)
 
     match args["CMD"]:
