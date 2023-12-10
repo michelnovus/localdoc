@@ -4,9 +4,9 @@
 import sys
 
 from config import Config
-from .console import console, Show
+from .console import console
 from .arguments import OPT, CMD, arguments, print_help
-from .execution_tasks import List, Serve
+from .execution_tasks import List, Serve, Close, Install, Remove, CloseDaemon
 
 
 def run_client(configuration: Config) -> None:
@@ -21,14 +21,43 @@ def run_client(configuration: Config) -> None:
             List(configuration, [], []).exec()
         case CMD.SERVE:
             if len(args["ARG"]) == 0:
-                console.print("No hay argumentos!")
+                console.print(
+                    "Faltan argumentos! Vea el comando [b]list[/] para "
+                    "obtener los argumentos válidos."
+                )
                 sys.exit(1)
             if OPT.OPEN in args["OPT"]:
                 open_in_browser = [OPT.OPEN]
             else:
                 open_in_browser = []
             Serve(configuration, args["ARG"], open_in_browser).exec()
+        case CMD.CLOSE:
+            if len(args["ARG"]) == 0:
+                console.print(
+                    "Faltan argumentos! Vea el comando [b]list[/] para "
+                    "obtener los argumentos válidos."
+                )
+                sys.exit(1)
+            Close(configuration, args["ARG"], []).exec()
+        case CMD.INSTALL:
+            if len(args["ARG"]) == 0:
+                console.print(
+                    "Debe pasar como argumento por lo menos un directorio "
+                    "que contenga un sitio web."
+                )
+                sys.exit(1)
+            Install(configuration, args["ARG"], []).exec()
+        case CMD.REMOVE:
+            if len(args["ARG"]) == 0:
+                console.print(
+                    "Faltan argumentos! Vea el comando [b]list[/] para "
+                    "obtener los argumentos válidos."
+                )
+                sys.exit(1)
+            Remove(configuration, args["ARG"], []).exec()
+        case CMD.CLOSE_DAEMON:
+            CloseDaemon(configuration, [], []).exec()
         case _:
-            # DEBUG
-            console.print(Show.warn("comando en construcción!"))
-            sys.exit(0)
+            raise NotImplementedError(
+                f"El comando {args['CMD']} es inválido o no está implementado."
+            )
