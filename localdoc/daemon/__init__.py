@@ -2,4 +2,4 @@
 """Proceso localdocd no interactivo."""
 
 from .launcher import daemonize
-from .utils import clear_tempdir, localdocd_is_running
+from .utils import clear_tempdir, is_localdocd_running

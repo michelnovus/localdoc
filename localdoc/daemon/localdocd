@@ -16,8 +16,8 @@ import threading
 import time
 
 from default import CONFIG_FILEPATH
-from config import Config
-from ipc import IPC, IPCType
+from configuration import load_configuration
+from ipc import IpcServer
 
 
 class KeepAlive(threading.Thread):
@@ -34,19 +34,24 @@ class KeepAlive(threading.Thread):
         self.status = False
 
 
-if __name__ == "__main__":
+def localdocd() -> int:
     with open(CONFIG_FILEPATH, "rt") as cfg_file:
-        configuration = Config(cfg_file.read())
+        configuration = load_configuration(cfg_file.read())
         if not configuration.socket_filepath.startswith("/tmp/localdoc"):
-            sys.exit(1)
-    ipc = IPC(configuration.socket_filepath, IPCType.SERVER)
+            return 1
+    ipc = IpcServer(configuration.socket_filepath)
 
     _keep_alive = KeepAlive(60)
     _keep_alive.start()
     while _keep_alive.status:
-        recv = ipc.wait()
-        if "localdocd_status" in recv.keys():
-            ipc.reply({"localdocd_status": "alive"})
+        response = ipc.wait_connection()
+        if "localdocd_status" in response.keys():
+            ipc.reply({"localdocd_status": "up"})
             continue
         ipc.reply({"response": "None"})
     ipc.close()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(localdocd())
