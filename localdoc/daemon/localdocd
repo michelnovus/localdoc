@@ -15,40 +15,87 @@ del localdoc_root
 import threading
 import time
 
+from typing import Sequence
 from default import CONFIG_FILEPATH
 from configuration import load_configuration
 from ipc import IpcServer
 
 
-class KeepAlive(threading.Thread):
-    """Mantiene el atributo 'status' en True hasta 'value' tiempo, lo cambia
-    a False pasado el mismo y termina el Thread."""
+class DocumentationServer(threading.Thread):
+    """Hilo que se encarga de iniciar un nuevo servidor para el paquete"""
 
-    def __init__(self, value: float, *args, **kwargs) -> None:
+    def __init__(self, package: str, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self._value = value
-        self.status = True
+        self.package = package
+        self.addr = None
+        self.port = None
 
     def run(self) -> None:
-        time.sleep(self._value)
-        self.status = False
+        pass
 
 
 def localdocd() -> int:
+    """
+    ### Instrucciones de IPC:
+    - "close_daemon": None | termina el proceso
+        - "response": "closing daemon"
+    - "localdocd_status": None | pregunta si el daemon esta vivo
+        - "response": "up" | o no hay respuesta si no esta vivo
+    - "serve_package": "package_name" | pide servir un paquete
+        - "response": "package is served in @addr/port@" | si se sirvió
+        con éxito
+        - "response": "package is already served in @addr/port@" | si ya
+        estaba servido
+    - "get_served_packages": None | pregunta por los paquetes servidos
+        - "response": {"package": (addr, port), ...}
+    """
     with open(CONFIG_FILEPATH, "rt") as cfg_file:
         configuration = load_configuration(cfg_file.read())
         if not configuration.socket_filepath.startswith("/tmp/localdoc"):
             return 1
     ipc = IpcServer(configuration.socket_filepath)
+    served_documentation: Sequence[DocumentationServer] = []
 
-    _keep_alive = KeepAlive(60)
-    _keep_alive.start()
-    while _keep_alive.status:
+    while True:
         response = ipc.wait_connection()
-        if "localdocd_status" in response.keys():
-            ipc.reply({"localdocd_status": "up"})
+        keys = response.keys()
+        if "close_daemon" in keys:
+            ipc.reply({"response": "closing daemon"})
+            # TODO: Aquí debe cerrar todos los threads que esten en ejecución!
+            break
+        if "localdocd_status" in keys:
+            ipc.reply({"response": "up"})
             continue
-        ipc.reply({"response": "None"})
+        if "serve_package" in keys:
+            new_thread = DocumentationServer(package=response["serve_package"])
+            generate_thread = True
+            for thread in served_documentation:
+                if thread.package == new_thread.package:
+                    ipc.reply(
+                        {
+                            "response": "package is already served in "
+                            f"{thread.addr}/{thread.port}"
+                        }
+                    )
+                    generate_thread = False
+                    break
+            if generate_thread:
+                new_thread.start()
+                time.sleep(0.5)
+                served_documentation.append(new_thread)
+                ipc.reply(
+                    {
+                        "response": "package is served in "
+                        f"{new_thread.addr}/{new_thread.port}"
+                    }
+                )
+            continue
+        if "get_served_packages" in keys:
+            served_packages: dict[str, tuple[str, int]] = {}
+            for thread in served_documentation:
+                served_packages[thread.package] = (thread.addr, thread.port)  # type: ignore
+            ipc.reply({"response": served_packages})
+            continue
     ipc.close()
     return 0
 

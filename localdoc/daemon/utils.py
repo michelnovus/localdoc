@@ -20,7 +20,7 @@ def clear_tempdir(socket_dir: str) -> None:
 def is_localdocd_running(ipc_socket: str) -> bool:
     """Comprueba si el daemon esta ejecutandose."""
     try:
-        response = ipc.communicate(ipc_socket, {"localdocd_status": ""})
+        response = ipc.communicate(ipc_socket, {"localdocd_status": None})
     except FileNotFoundError:
         return False
     except ConnectionRefusedError:

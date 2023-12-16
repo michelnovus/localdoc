@@ -2,8 +2,10 @@
 """Información de paquetes."""
 
 import os
-from typing import Sequence
 import filetype
+from typing import Sequence
+
+import ipc
 
 
 def available_packages(
@@ -40,4 +42,5 @@ def served_packages(ipc_socket) -> dict[str, tuple[str, int]]:
     Retorna un 'dict' que tiene por claves los nombres de los paquetes y por
     valores una tupla con el socket web y el puerto.
     """
-    return {}
+    response = ipc.communicate(ipc_socket, {"get_served_packages": None})
+    return response
