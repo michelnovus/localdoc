@@ -2,7 +2,7 @@
 
 from typing import Sequence
 
-from config import Config
+from configuration import Config
 from client.arguments import OPT
 
 
@@ -16,6 +16,3 @@ class BaseExecClass(object):
         self.configuration = configuration
         self.args = args
         self.options = options
-
-    def exec(self) -> None:
-        pass

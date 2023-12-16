@@ -8,7 +8,7 @@ from typing import Sequence
 import ipc
 
 
-def available_packages(
+def get_available_packages(
     package_directory: str, types: Sequence[str] = ("tar", "xz", "bz2")
 ) -> list[str]:
     """Devuelve una lista de las rutas absolutas a los paquetes disponibles.
@@ -37,7 +37,7 @@ def available_packages(
     return packages
 
 
-def served_packages(ipc_socket) -> dict[str, tuple[str, int]]:
+def get_served_packages(ipc_socket) -> dict[str, tuple[str, int]]:
     """Comprueba los paquetes que están servidos actualmente en algún puerto.
     Retorna un 'dict' que tiene por claves los nombres de los paquetes y por
     valores una tupla con el socket web y el puerto.

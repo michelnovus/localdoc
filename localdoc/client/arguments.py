@@ -1,9 +1,9 @@
 # [GLP3] Copyright (C) 2024  Michel Novus
 """Analiza los argumentos que se pasan al cliente en la Línea de Comandos."""
 
+import sys
 from typing import Any
 from enum import Enum
-import sys
 
 from .console import console
 

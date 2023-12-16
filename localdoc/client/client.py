@@ -3,7 +3,7 @@
 
 import sys
 
-from config import Config
+from configuration import Config
 from .console import console
 from .arguments import OPT, CMD, arguments, print_help
 from .execution_tasks import List, Serve, Close, Install, Remove, CloseDaemon
@@ -18,7 +18,7 @@ def run_client(configuration: Config) -> None:
 
     match args["CMD"]:
         case CMD.LIST:
-            List(configuration, [], []).exec()
+            List(configuration, [], [])
         case CMD.SERVE:
             if len(args["ARG"]) == 0:
                 console.print(
@@ -30,7 +30,7 @@ def run_client(configuration: Config) -> None:
                 open_in_browser = [OPT.OPEN]
             else:
                 open_in_browser = []
-            Serve(configuration, args["ARG"], open_in_browser).exec()
+            Serve(configuration, args["ARG"], open_in_browser)
         case CMD.CLOSE:
             if len(args["ARG"]) == 0:
                 console.print(
@@ -38,7 +38,7 @@ def run_client(configuration: Config) -> None:
                     "obtener los argumentos válidos."
                 )
                 sys.exit(1)
-            Close(configuration, args["ARG"], []).exec()
+            Close(configuration, args["ARG"], [])
         case CMD.INSTALL:
             if len(args["ARG"]) == 0:
                 console.print(
@@ -46,7 +46,7 @@ def run_client(configuration: Config) -> None:
                     "que contenga un sitio web."
                 )
                 sys.exit(1)
-            Install(configuration, args["ARG"], []).exec()
+            Install(configuration, args["ARG"], [])
         case CMD.REMOVE:
             if len(args["ARG"]) == 0:
                 console.print(
@@ -54,9 +54,9 @@ def run_client(configuration: Config) -> None:
                     "obtener los argumentos válidos."
                 )
                 sys.exit(1)
-            Remove(configuration, args["ARG"], []).exec()
+            Remove(configuration, args["ARG"], [])
         case CMD.CLOSE_DAEMON:
-            CloseDaemon(configuration, [], []).exec()
+            CloseDaemon(configuration, [], [])
         case _:
             raise NotImplementedError(
                 f"El comando {args['CMD']} es inválido o no está implementado."

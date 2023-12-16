@@ -1,6 +1,5 @@
 # [GLP3] Copyright (C) 2024  Michel Novus
 
-from ipc import IPC, IPCType
 from .base_class import BaseExecClass
 
 
