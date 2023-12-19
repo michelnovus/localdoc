@@ -1,8 +1,8 @@
 # [GLP3] Copyright (C) 2024  Michel Novus
 
-from .list import List
-from .serve import Serve
-from .close import Close
-from .install import Install
-from .remove import Remove
-from .close_daemon import CloseDaemon
+from .list import show_listing_wall
+from .serve import serve_package
+from .close import close_package
+from .install import install_package
+from .remove import uninstall_package
+from .close_daemon import close_daemon

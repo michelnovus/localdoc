@@ -73,8 +73,9 @@ def localdocd() -> int:
                 if thread.package == new_thread.package:
                     ipc.reply(
                         {
-                            "response": "package is already served in "
-                            f"{thread.addr}/{thread.port}"
+                            "response": "package is already served",
+                            "addr": thread.addr,
+                            "port": thread.port,
                         }
                     )
                     generate_thread = False
@@ -85,8 +86,9 @@ def localdocd() -> int:
                 served_documentation.append(new_thread)
                 ipc.reply(
                     {
-                        "response": "package is served in "
-                        f"{new_thread.addr}/{new_thread.port}"
+                        "response": "package is served",
+                        "addr": new_thread.addr,
+                        "port": new_thread.port,
                     }
                 )
             continue

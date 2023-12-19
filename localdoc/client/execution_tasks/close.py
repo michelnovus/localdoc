@@ -1,8 +1,6 @@
 # [GLP3] Copyright (C) 2024  Michel Novus
 
-from .base_class import BaseExecClass
 
-
-class Close(BaseExecClass):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+def close_package(ipc_socket: str, package: str) -> None:
+    """Termina el servidor del packete."""
+    pass
