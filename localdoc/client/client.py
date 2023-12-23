@@ -17,8 +17,10 @@ def run_client(cfg: Config) -> None:
         print_help()
         sys.exit(1)
 
+    # available_packages = get_available_packages(cfg.package_dir)
+    # served_packages = get_served_packages(cfg.socket_filepath)
     available_packages = get_available_packages(cfg.package_dir)
-    served_packages = get_served_packages(cfg.socket_filepath)
+    served_packages = {}
     match args["CMD"]:
         case CMD.LIST:
             show_listing_wall(cfg.socket_filepath, cfg.package_dir)

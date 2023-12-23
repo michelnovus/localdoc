@@ -5,7 +5,7 @@ import os
 import filetype
 from typing import Sequence
 
-import ipc
+import ipc_purepy as ipc
 
 
 def get_available_packages(
@@ -37,10 +37,15 @@ def get_available_packages(
     return packages
 
 
-def get_served_packages(ipc_socket) -> dict[str, tuple[str, int]]:
+def get_served_packages(ipc_socket: str) -> dict[str, tuple[str, int]]:
     """Comprueba los paquetes que están servidos actualmente en algún puerto.
     Retorna un 'dict' que tiene por claves los nombres de los paquetes y por
     valores una tupla con el socket web y el puerto.
     """
-    response = ipc.communicate(ipc_socket, {"get_served_packages": None})
+    response = ipc.communicate(ipc_socket, "get_served_packages")
+    if not isinstance(response, dict):
+        raise TypeError(
+            "Se esperaba: dict[str, tuple[str, int]], "
+            f"se obtuvo: {type(response)}"
+        )
     return response

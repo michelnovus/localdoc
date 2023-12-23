@@ -1,20 +1,27 @@
 [build-system]
-requires = ["setuptools>=65.5.0"]
+requires = ["setuptools>=69.0.2", "setuptools-scm>=8.0.4"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "localdoc"
-version = "0.0.1"
+dynamic = ["version"]
+requires-python = ">=3.11"
 authors = [{ name = "Michel Novus", email = "michelnovus@gmail.com" }]
 description = ""
 readme = "README.md"
-requires-python = ">=3.11"
+license = { file = "LICENSE" }
+keywords = []
 classifiers = [
   "Programming Language :: Python :: 3.11",
   "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
   "Operating System :: POSIX :: Linux",
 ]
-dependencies = ["flask>=3.0.0", "rich>=13.7.0"]
+dependencies = ["ipc-purepy>=0.1.0", "rich>=13.7.0"]
 
 [project.urls]
-"Homepage" = "https://github.com/michelnovus/localdoc"
+"Repository" = "https://github.com/michelnovus/localdoc"
+
+[tool.setuptools_scm]
+
+[tool.setuptools]
+packages = ["localdoc"]
