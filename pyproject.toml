@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "localdoc-service"
+version = "0.1.0"
+description = "localdoc-service is the backend documentation server process."
+authors = ["Michel Novus <michelnovus@gmail.com>"]
+license = "MIT License"
+readme = "README.md"
+packages = [{ include = "localdoc_service" }]
+
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
