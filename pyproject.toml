@@ -7,9 +7,9 @@ license = "MIT License"
 readme = "README.md"
 packages = [{ include = "localdoc_service" }]
 
-
 [tool.poetry.dependencies]
 python = "^3.11"
+rich = "*"
 
 
 [build-system]
