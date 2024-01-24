@@ -1,7 +1,9 @@
 __pycache__/
 dist/
 poetry.lock
-*.try*  # Archivos temporales de pruebas
+
+# Archivos temporales de pruebas
+test_*
 
 !__init__.py
 !__main__.py

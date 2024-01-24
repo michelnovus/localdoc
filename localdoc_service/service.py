@@ -1,9 +1,23 @@
 # [MIT License] Copyright (c) 2024 Michel Novus
 
+import os.path
 from threading import Lock
-from socketserver import BaseRequestHandler
 
 
+class Config(object):
+    """Saves whole configuration data of application."""
+
+    def __init__(self, runtime_directory: str, socket_name: str) -> None:
+        self.runtime_directory = runtime_directory
+        self.socket_name = socket_name
+
+    @property
+    def socket_path(self) -> str:
+        """Gets absolute path to socket."""
+        return os.path.join(self.runtime_directory, self.socket_name)
+
+
+# TEMP
 class DocProcess(object):
     """"""
 
@@ -21,8 +35,9 @@ class DocProcess(object):
         pass
 
 
+# TEMP
 class ServedDocs(object):
-    """Contiene y modifica los estados de los procesos servidos."""
+    """"""
 
     def __init__(self) -> None:
         self._lock = Lock()
@@ -49,8 +64,3 @@ class ServedDocs(object):
         with self._lock:
             served_documentation = list(self._subprocess.keys())
         return served_documentation
-
-
-class DispatcherHandler(BaseRequestHandler):
-    def handle(self) -> None:
-        pass

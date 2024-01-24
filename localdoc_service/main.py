@@ -6,29 +6,34 @@ import os.path
 import time
 import socketserver
 
-import debug
-from server import DispatcherHandler
+from journal import Journal
+from handler import ConnectionHandler
+from service import Config
 
 
 def main():
-    debug.print("Cargando Localdoc Service.")
-    LOCALDOC_RUNTIME_DIR = f"/run/user/{os.getuid()}/localdoc"
-    SOCKET = os.path.join(LOCALDOC_RUNTIME_DIR, "service.socket")
-    os.makedirs(LOCALDOC_RUNTIME_DIR, exist_ok=True)
-    debug.print(f"Socket en: {SOCKET}")
-
-    debug.print("Iniciando servidor.")
-    with socketserver.UnixStreamServer(SOCKET, DispatcherHandler) as unix_sock:
+    journal = Journal()
+    journal.info("Launch Localdoc service.")
+    config = Config(
+        runtime_directory=f"/run/user/{os.getuid()}/localdoc",
+        socket_name="service.socket",
+    )
+    os.makedirs(config.runtime_directory, exist_ok=True)
+    journal.info(f"Created runtime in: {config.runtime_directory}")
+    journal.info("Init socket.")
+    with socketserver.UnixStreamServer(
+        config.socket_path, ConnectionHandler
+    ) as unix_sock:
         try:
             unix_sock.serve_forever()
         except KeyboardInterrupt:
-            debug.print("Cerrando servidor.")
+            journal.info("Closing socket.")
             pass
         finally:
             time.sleep(0.5)
-            debug.print("Eliminando Unix socket.")
-            os.unlink(SOCKET)
-    debug.print("Terminado.")
+            journal.info("Unlink socket.")
+            os.unlink(config.socket_path)
+    journal.info("Localdoc service terminated.")
 
 
 if __name__ == "__main__":
