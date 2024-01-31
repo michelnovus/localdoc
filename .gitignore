@@ -1,9 +1,1 @@
-__pycache__/
-dist/
-poetry.lock
-
-# Archivos temporales de pruebas
-test_*
-
-!__init__.py
-!__main__.py
+/target
