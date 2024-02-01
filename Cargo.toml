@@ -12,3 +12,4 @@ keywords = ["service", "server", "documentation"]
 publish = false
 
 [dependencies]
+users = "0.11.0"
