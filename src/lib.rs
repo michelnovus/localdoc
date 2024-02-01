@@ -17,8 +17,8 @@ use users::{get_current_uid, get_user_by_uid};
 ///
 /// Finalmente si no se pudieron obtener ninguna de las anteriores variables
 /// de entrono la función devuelve `Option::None`.
-pub fn resolve_socket_filepath() -> Option<String> {
-    let socket_filepath = var("LOCALDOC_SOCKET").unwrap_or_default();
+pub fn resolve_socket_filepath(optional_envar: &str) -> Option<String> {
+    let socket_filepath = var(optional_envar).unwrap_or_default();
     if socket_filepath.is_empty() {
         return match get_user_by_uid(get_current_uid()) {
             Some(data) => {
