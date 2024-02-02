@@ -45,7 +45,7 @@ impl RuntimeDir {
     pub fn new(dirpath: &str, socket_name: &str) -> RuntimeDir {
         RuntimeDir {
             root_directory: PathBuf::from(dirpath),
-            socket_path: PathBuf::from(socket_name),
+            socket_path: RuntimeDir::set_socket_path(dirpath, socket_name),
         }
     }
 
@@ -66,11 +66,11 @@ impl RuntimeDir {
         &self.socket_path
     }
 
-    /// Cambia el nombre actual del socket.
-    pub fn set_socket_name(&mut self, name: &str) {
-        self.socket_path.clear();
-        self.socket_path.push(&self.root_directory);
-        self.socket_path.push(name);
+    fn set_socket_path(root_path: &str, name: &str) -> PathBuf {
+        let mut socket_path = PathBuf::new();
+        socket_path.push(root_path);
+        socket_path.push(name);
+        socket_path
     }
 
     /// Devuelve la ruta absoluta al directorio raíz del proceso.
