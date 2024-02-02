@@ -4,6 +4,8 @@ extern crate localdoc_service;
 use localdoc_service::{resolve_root_directory, RuntimeDir};
 use std::env;
 use std::io;
+use std::net::Shutdown;
+use std::os::unix::net::UnixListener;
 use std::process;
 
 fn main() {
@@ -35,4 +37,26 @@ fn main() {
         }
         Err(_) => panic!("Error indeterminado"),
     };
+
+    let listener = UnixListener::bind(runtime_directory.get_socket())
+        .unwrap_or_else(|err| {
+            eprint!("No se pudo crear el socket, error: [{:?}]", err.kind());
+            process::exit(1);
+        });
+    println!(
+        "Socket: {} iniciado.",
+        runtime_directory.get_socket().to_str().unwrap()
+    );
+    for conn in listener.incoming() {
+        match conn {
+            Ok(stream) => {
+                println!("conectado y adiós");
+                stream
+                    .shutdown(Shutdown::Both)
+                    .expect("No se pudo apagar la conexión!");
+                break;
+            }
+            Err(err) => eprint!("Error en conexión entrante [{}]", err.kind()),
+        };
+    }
 }
