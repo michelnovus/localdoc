@@ -1,7 +1,7 @@
 // [MIT License] Copyright (c) 2024 Michel Novus
 
 extern crate localdoc_service;
-use localdoc_service::{resolve_root_directory, RuntimeDir};
+use localdoc_service::start::{resolve_root_directory, RuntimeDir};
 use std::env;
 use std::io;
 use std::net::Shutdown;
