@@ -1,9 +1,13 @@
 // [MIT License] Copyright (c) 2024 Michel Novus
 
 extern crate localdoc_service;
+use localdoc_service::socket;
+use localdoc_service::socket::api::Command;
 use localdoc_service::start::{resolve_root_directory, RuntimeDir};
 use std::env;
 use std::io;
+use std::io::prelude::*;
+use std::matches;
 use std::net::Shutdown;
 use std::os::unix::net::UnixListener;
 use std::process;
@@ -48,15 +52,32 @@ fn main() {
         runtime_directory.get_socket().to_str().unwrap()
     );
     for conn in listener.incoming() {
-        match conn {
-            Ok(stream) => {
-                println!("conectado y adiós");
-                stream
-                    .shutdown(Shutdown::Both)
-                    .expect("No se pudo apagar la conexión!");
-                break;
+        let mut stream = match conn {
+            Ok(stream) => stream,
+            Err(err) => {
+                eprintln!("Error en la conexión: [{:?}]", err.kind());
+                continue;
             }
-            Err(err) => eprint!("Error en conexión entrante [{}]", err.kind()),
         };
+
+        let command = match socket::handle(&mut stream) {
+            Ok(command) => command,
+            Err(err) => {
+                eprintln!(
+                    "Error durante la lectura del flujo: [{:?}]",
+                    err.kind()
+                );
+                continue;
+            }
+        };
+
+        //DEBUG
+        if matches!(command, Command::EXIT) {
+            stream.write_all("Saliendo".as_bytes()).unwrap();
+            stream.shutdown(Shutdown::Write).unwrap();
+            break;
+        }
+
+        println!("{:?}", command);
     }
 }
