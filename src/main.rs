@@ -2,13 +2,12 @@
 
 extern crate localdoc_service;
 use localdoc_service::socket;
-use localdoc_service::socket::api::Command;
+use localdoc_service::socket::api::Status::{Failed, Success};
+use localdoc_service::socket::api::{Command, Response};
 use localdoc_service::start::{resolve_root_directory, RuntimeDir};
 use std::env;
 use std::io;
-use std::io::prelude::*;
 use std::matches;
-use std::net::Shutdown;
 use std::os::unix::net::UnixListener;
 use std::process;
 
@@ -60,7 +59,7 @@ fn main() {
             }
         };
 
-        let command = match socket::handle(&mut stream) {
+        let command = match socket::recv(&mut stream) {
             Ok(command) => command,
             Err(err) => {
                 eprintln!(
@@ -73,11 +72,12 @@ fn main() {
 
         //DEBUG
         if matches!(command, Command::EXIT) {
-            stream.write_all("Saliendo".as_bytes()).unwrap();
-            stream.shutdown(Shutdown::Write).unwrap();
+            socket::reply(&mut stream, Response::EXIT(Success)).unwrap();
             break;
         }
 
         println!("{:?}", command);
+        socket::reply(&mut stream, Response::STATUS { status: Success })
+            .unwrap();
     }
 }

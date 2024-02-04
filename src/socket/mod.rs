@@ -9,10 +9,19 @@ use std::net::Shutdown;
 use std::os::unix::net::UnixStream;
 
 /// Lee el flujo de entrada del socket y lo traduce a estructuras Rust.
-pub fn handle(stream: &mut UnixStream) -> io::Result<api::Command> {
+pub fn recv(stream: &mut UnixStream) -> io::Result<api::Command> {
     let mut buffer = String::new();
     stream.read_to_string(&mut buffer)?;
     stream.shutdown(Shutdown::Read)?;
     let command: api::Command = serde_json::from_str(&buffer)?;
     Result::Ok(command)
+}
+
+/// Escribe en el flujo de salida del socket.
+pub fn reply(
+    stream: &mut UnixStream,
+    message: api::Response,
+) -> io::Result<()> {
+    stream.shutdown(Shutdown::Write)?;
+    Ok(())
 }
