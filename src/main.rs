@@ -2,13 +2,13 @@
 
 extern crate localdoc_service;
 use localdoc_service::constants::*;
+use localdoc_service::process::{
+    resolve_root_directory, stop_process, RuntimeDir,
+};
+use localdoc_service::service::Service;
 use localdoc_service::socket;
-use localdoc_service::socket::api::Status::{Failed, Success};
-use localdoc_service::socket::api::{Command, Response};
-use localdoc_service::start::{resolve_root_directory, RuntimeDir};
 use std::env;
 use std::io;
-use std::matches;
 use std::os::unix::net::UnixListener;
 use std::process;
 
@@ -65,6 +65,7 @@ fn main() {
         "Socket: {} iniciado.",
         runtime_dir.get_socket().to_str().unwrap()
     );
+    let mut service = Service::new();
     for conn in listener.incoming() {
         let mut stream = match conn {
             Ok(stream) => stream,
@@ -86,13 +87,17 @@ fn main() {
         };
 
         //DEBUG
-        if matches!(command, Command::EXIT) {
-            socket::reply(&mut stream, Response::EXIT(Success)).unwrap();
+        let status = match service.execute_command(command) {
+            Ok(resp) => resp,
+            Err(err) => {
+                eprintln!("{:?}", err.kind());
+                continue;
+            }
+        };
+
+        if stop_process(&status) {
+            println!("Servicio terminado");
             break;
         }
-
-        println!("{:?}", command);
-        socket::reply(&mut stream, Response::STATUS { status: Success })
-            .unwrap();
     }
 }

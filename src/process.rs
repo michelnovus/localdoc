@@ -2,6 +2,7 @@
 //! Se definen funciones y estructuras necesarias en el arranque de
 //! un nuevo proceso.
 
+use crate::socket::api::{Response, Response::EXIT, Status::Success};
 use std::fs;
 use std::io;
 use std::io::{Error, ErrorKind};
@@ -19,6 +20,15 @@ pub fn resolve_root_directory() -> Option<String> {
             Some(String::from(format!("/run/user/{uid}/localdoc")))
         }
         None => None,
+    }
+}
+
+/// Comprueba si `response` es el valor `EXIT(Success)`.
+pub fn stop_process(response: &Response) -> bool {
+    if let EXIT(Success) = response {
+        true
+    } else {
+        false
     }
 }
 
