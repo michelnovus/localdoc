@@ -22,6 +22,9 @@ pub fn reply(
     stream: &mut UnixStream,
     message: api::Response,
 ) -> io::Result<()> {
+    let mut buffer = String::new();
+    buffer.push_str(&serde_json::to_string(&message)?);
+    stream.write_all(buffer.as_bytes())?;
     stream.shutdown(Shutdown::Write)?;
     Ok(())
 }
