@@ -65,7 +65,7 @@ fn main() {
         "Socket: {} iniciado.",
         runtime_dir.get_socket().to_str().unwrap()
     );
-    let mut service = Service::new();
+    let mut service = Service::new(runtime_dir);
     for conn in listener.incoming() {
         let mut stream = match conn {
             Ok(stream) => stream,
@@ -86,16 +86,21 @@ fn main() {
             }
         };
 
-        //DEBUG
-        let status = match service.execute_command(command) {
-            Ok(resp) => resp,
+        let stop_iteration = match service.execute_command(command) {
+            Ok(resp) => {
+                let stop_iteration = stop_process(&resp);
+                socket::reply(&mut stream, resp).unwrap_or_else(|err| {
+                    eprintln!("Error en la respuesta [{:?}]", err);
+                });
+                stop_iteration
+            }
             Err(err) => {
                 eprintln!("{:?}", err.kind());
                 continue;
             }
         };
 
-        if stop_process(&status) {
+        if stop_iteration {
             println!("Servicio terminado");
             break;
         }

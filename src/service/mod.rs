@@ -2,16 +2,20 @@
 
 mod error;
 
+use crate::process::RuntimeDir;
 use crate::socket::api::Command;
 use crate::socket::api::Command::*;
 use crate::socket::api::Response;
 use crate::socket::api::Status::*;
 
-pub struct Service {}
+#[allow(dead_code)]
+pub struct Service {
+    runtime_dir: RuntimeDir,
+}
 
 impl Service {
-    pub fn new() -> Service {
-        Service {}
+    pub fn new(runtime_dir: RuntimeDir) -> Service {
+        Service { runtime_dir }
     }
 
     pub fn execute_command(
