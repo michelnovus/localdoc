@@ -1,6 +1,7 @@
 // [MIT License] Copyright (c) 2024 Michel Novus
 
 extern crate localdoc_service;
+use localdoc_service::constants::*;
 use localdoc_service::socket;
 use localdoc_service::socket::api::Status::{Failed, Success};
 use localdoc_service::socket::api::{Command, Response};
@@ -12,43 +13,57 @@ use std::os::unix::net::UnixListener;
 use std::process;
 
 fn main() {
-    let runtime_directory = {
-        let root_directory = resolve_root_directory("LOCALDOC_ROOT")
-            .unwrap_or_else(|| process::exit(1));
-        let socket_name = env::var("LOCALDOC_SOCKET")
-            .unwrap_or_else(|_| String::from("localdoc.socket"));
-        RuntimeDir::new(&root_directory, &socket_name)
+    let runtime_dir = {
+        let root_dir = {
+            env::var(ROOT_DIRECTORY_ENV_VAR).unwrap_or_else(|_| {
+                resolve_root_directory().unwrap_or_else(|| {
+                    eprintln!(
+                        "No se pudo resolver el directorio raíz
+                        para el proceso!"
+                    );
+                    process::exit(1);
+                })
+            })
+        };
+        let socket_name = env::var(SOCKET_NAME_ENV_VAR)
+            .unwrap_or_else(|_| SOCKET_NAME_DEFAULT.to_string());
+        RuntimeDir::new(&root_dir, &socket_name)
     };
-    match runtime_directory.create_root() {
-        Ok(_) => println!(
-            "Se creó el directorio: {:?}",
-            runtime_directory.get_root()
-        ),
+    // Temporalmente no se permite ejecuar el proceso en subdirectorios
+    // de HOME por probable eliminación de archivos del usuario...
+    if runtime_dir.get_root().starts_with("/home") {
+        eprintln!(
+            "El servicio no se puede ejecutar en los
+            directorios de usuario!"
+        );
+        process::exit(1);
+    };
+    match runtime_dir.create_root() {
+        Ok(_) => {
+            println!("Se creó el directorio: {:?}", runtime_dir.get_root());
+        }
         Err(err) if err.kind() == io::ErrorKind::PermissionDenied => {
             eprintln!(
                 "No tienes permisos para crear: {:?}",
-                runtime_directory.get_root()
+                runtime_dir.get_root()
             );
             process::exit(1);
         }
         Err(err) if err.kind() == io::ErrorKind::AlreadyExists => {
-            eprintln!(
-                "El directorio: {:?} ya existe",
-                runtime_directory.get_root(),
-            );
-            process::exit(1); // Salir por seguridad de los datos en disco
+            eprintln!("El directorio: {:?} ya existe", runtime_dir.get_root());
+            process::exit(1);
         }
-        Err(_) => panic!("Error indeterminado"),
+        Err(err) => panic!("Error indeterminado: {:#?}", err),
     };
 
-    let listener = UnixListener::bind(runtime_directory.get_socket())
-        .unwrap_or_else(|err| {
+    let listener =
+        UnixListener::bind(runtime_dir.get_socket()).unwrap_or_else(|err| {
             eprint!("No se pudo crear el socket, error: [{:?}]", err.kind());
             process::exit(1);
         });
     println!(
         "Socket: {} iniciado.",
-        runtime_directory.get_socket().to_str().unwrap()
+        runtime_dir.get_socket().to_str().unwrap()
     );
     for conn in listener.incoming() {
         let mut stream = match conn {

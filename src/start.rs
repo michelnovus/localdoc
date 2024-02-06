@@ -1,9 +1,7 @@
 // [MIT License] Copyright (c) 2024 Michel Novus
-
 //! Se definen funciones y estructuras necesarias en el arranque de
 //! un nuevo proceso.
 
-use std::env::var;
 use std::fs;
 use std::io;
 use std::io::{Error, ErrorKind};
@@ -12,29 +10,15 @@ use users::{get_current_uid, get_user_by_uid};
 
 /// Resuelve la localización del directorio raíz del proceso en el sistema de archivos.
 ///
-/// La función busca una variable de entorno definida en `optional_envar` y
-/// comprueba si no está vacía. Si tiene contenido la función retorna
-/// un `Option::Some(String)` donde `String` es el contenido de la variable
-/// de entrono.
-///
-/// Si `optional_envar` está vacía (no existe o es una cadena de
-/// longitud cero), se intenta obtener el `UID` del usuario activo y
-/// generar la ruta `/run/user/$UID/localdoc` envolviendola con `Option::Some()`.
-///
-/// Finalmente si no se pudieron obtener ninguna de las anteriores variables
-/// de entrono la función devuelve `Option::None`.
-pub fn resolve_root_directory(optional_envar: &str) -> Option<String> {
-    let root_directory = var(optional_envar).unwrap_or_default();
-    if root_directory.is_empty() {
-        return match get_user_by_uid(get_current_uid()) {
-            Some(data) => {
-                let uid = data.uid();
-                Some(String::from(format!("/run/user/{uid}/localdoc")))
-            }
-            None => None,
-        };
-    } else {
-        Some(root_directory)
+/// La función busca el `UID` del usuario activo y generar la ruta
+/// `/run/user/$UID/localdoc` envolviendola con `Option::Some()`.
+pub fn resolve_root_directory() -> Option<String> {
+    match get_user_by_uid(get_current_uid()) {
+        Some(data) => {
+            let uid = data.uid();
+            Some(String::from(format!("/run/user/{uid}/localdoc")))
+        }
+        None => None,
     }
 }
 

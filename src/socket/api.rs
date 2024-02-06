@@ -1,5 +1,5 @@
 // [MIT License] Copyright (c) 2024 Michel Novus
-//! Comandos, errores, serializacion del Socket API del proceso.
+//! Comandos, respuestas y serializacion del Socket API del proceso.
 
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
