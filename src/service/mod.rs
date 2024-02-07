@@ -10,7 +10,6 @@ use process::{stop_process, RuntimeDir};
 use socket::api::{Command, Command::*, Response, Status::*};
 use std::os::unix::net::UnixListener;
 
-#[allow(dead_code)]
 pub struct Service {
     runtime_dir: RuntimeDir,
 }
