@@ -3,10 +3,11 @@
 //! un nuevo proceso.
 
 use crate::service::socket::api::{Response, Response::EXIT, Status::Success};
-use std::fs;
-use std::io;
-use std::io::{Error, ErrorKind};
-use std::path::PathBuf;
+use std::{
+    fs, io,
+    io::{Error, ErrorKind},
+    path::PathBuf,
+};
 use users::{get_current_uid, get_user_by_uid};
 
 /// Resuelve la localización del directorio raíz del proceso en el sistema de archivos.
@@ -59,8 +60,8 @@ impl RuntimeDir {
     }
 
     /// Devuelve la ruta absoluta al socket del proceso.
-    pub fn get_socket(&self) -> &PathBuf {
-        &self.socket_path
+    pub fn get_socket(&self) -> Option<&PathBuf> {
+        Some(&self.socket_path)
     }
 
     fn set_socket_path(root_path: &str, name: &str) -> PathBuf {
@@ -71,8 +72,8 @@ impl RuntimeDir {
     }
 
     /// Devuelve la ruta absoluta al directorio raíz del proceso.
-    pub fn get_root(&self) -> &PathBuf {
-        &self.root_directory
+    pub fn get_root(&self) -> Option<&PathBuf> {
+        Some(&self.root_directory)
     }
 }
 

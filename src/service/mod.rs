@@ -5,11 +5,10 @@ pub mod error;
 pub mod process;
 pub mod socket;
 
-use process::RuntimeDir;
-use socket::api::Command;
-use socket::api::Command::*;
-use socket::api::Response;
-use socket::api::Status::*;
+use error::{ServiceError, ServiceErrorKind};
+use process::{stop_process, RuntimeDir};
+use socket::api::{Command, Command::*, Response, Status::*};
+use std::os::unix::net::UnixListener;
 
 #[allow(dead_code)]
 pub struct Service {
@@ -21,9 +20,67 @@ impl Service {
         Service { runtime_dir }
     }
 
-    pub fn execute_command(
+    fn make_socket(&self) -> Result<UnixListener, error::ServiceError> {
+        match UnixListener::bind(
+            &self
+                .runtime_dir
+                .get_socket()
+                .expect("Implementar error de RootDir Path"),
+        ) {
+            Ok(listener) => Ok(listener),
+            Err(err) => Err(ServiceError::new(
+                ServiceErrorKind::FileCreationError,
+                format!("Source: {:?}", err),
+            )),
+        }
+    }
+
+    /// Inicia el servicio.
+    pub fn start(&mut self) -> Result<(), error::ServiceError> {
+        for conn in self.make_socket()?.incoming() {
+            let mut stream = match conn {
+                Ok(stream) => stream,
+                Err(err) => {
+                    eprintln!("Error en la conexión: [{:?}]", err.kind());
+                    continue;
+                }
+            };
+
+            let command = match socket::recv(&mut stream) {
+                Ok(command) => command,
+                Err(err) => {
+                    eprintln!(
+                        "Error durante la lectura del flujo: [{:?}]",
+                        err.kind()
+                    );
+                    continue;
+                }
+            };
+
+            let stop_iteration = match self.execute_command(&command) {
+                Ok(resp) => {
+                    let stop_iteration = stop_process(&resp);
+                    socket::reply(&mut stream, resp).unwrap_or_else(|err| {
+                        eprintln!("Error en la respuesta [{:?}]", err);
+                    });
+                    stop_iteration
+                }
+                Err(err) => {
+                    eprintln!("{:?}", err.kind());
+                    continue;
+                }
+            };
+
+            if stop_iteration {
+                break;
+            }
+        }
+        Ok(())
+    }
+
+    fn execute_command(
         &mut self,
-        command: Command,
+        command: &Command,
     ) -> Result<Response, error::ServiceError> {
         match command {
             INSTALL {
@@ -37,8 +94,8 @@ impl Service {
                     target, doc_type, doc_name, doc_version
                 );
                 Err(error::ServiceError::new(
-                    error::ServiceErrorKind::Error1,
-                    "Errooor".to_string(),
+                    error::ServiceErrorKind::NotImplementedError,
+                    "Testeos, nada implementado por aquí!".to_string(),
                 ))
             }
             DELETE {

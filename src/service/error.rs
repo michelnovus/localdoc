@@ -1,11 +1,11 @@
 // [MIT License] Copyright (c) 2024 Michel Novus
 
-use std::error::Error;
-use std::fmt;
+use std::{error::Error, fmt};
 
 #[derive(Debug, Clone, Copy)]
 pub enum ServiceErrorKind {
-    Error1,
+    FileCreationError,
+    NotImplementedError,
 }
 
 #[derive(Debug)]

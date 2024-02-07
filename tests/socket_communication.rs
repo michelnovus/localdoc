@@ -2,9 +2,8 @@
 
 extern crate localdoc_service;
 
-// use localdoc_service;
-use std::os::unix::net::UnixStream;
-use std::thread;
+use localdoc_service::service::Service;
+use std::{os::unix::net::UnixStream, thread};
 
 const SOCKET: &'static str = "/tmp/socket_communication_test";
 
