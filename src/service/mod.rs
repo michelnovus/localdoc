@@ -1,12 +1,15 @@
 // [MIT License] Copyright (c) 2024 Michel Novus
 
-mod error;
+pub mod constants;
+pub mod error;
+pub mod process;
+pub mod socket;
 
-use crate::process::RuntimeDir;
-use crate::socket::api::Command;
-use crate::socket::api::Command::*;
-use crate::socket::api::Response;
-use crate::socket::api::Status::*;
+use process::RuntimeDir;
+use socket::api::Command;
+use socket::api::Command::*;
+use socket::api::Response;
+use socket::api::Status::*;
 
 #[allow(dead_code)]
 pub struct Service {

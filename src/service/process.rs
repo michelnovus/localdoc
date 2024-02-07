@@ -2,7 +2,7 @@
 //! Se definen funciones y estructuras necesarias en el arranque de
 //! un nuevo proceso.
 
-use crate::socket::api::{Response, Response::EXIT, Status::Success};
+use crate::service::socket::api::{Response, Response::EXIT, Status::Success};
 use std::fs;
 use std::io;
 use std::io::{Error, ErrorKind};

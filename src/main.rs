@@ -1,12 +1,12 @@
 // [MIT License] Copyright (c) 2024 Michel Novus
 
 extern crate localdoc_service;
-use localdoc_service::constants::*;
-use localdoc_service::process::{
+use localdoc_service::service::constants::*;
+use localdoc_service::service::process::{
     resolve_root_directory, stop_process, RuntimeDir,
 };
+use localdoc_service::service::socket;
 use localdoc_service::service::Service;
-use localdoc_service::socket;
 use std::env;
 use std::io;
 use std::os::unix::net::UnixListener;
