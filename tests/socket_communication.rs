@@ -14,9 +14,7 @@ const SOCKET: &'static str = "/tmp/socket_communication_test/socket";
 #[test]
 fn socket_communication_test() {
     let runtime_dir = RuntimeDir::new(&ROOT_DIR, &SOCK_NAME);
-    runtime_dir
-        .create_root()
-        .expect("Error al crear los directorios.");
+    runtime_dir.make().expect("Error al crear los directorios.");
     let mut service = Service::new(runtime_dir);
     thread::spawn(move || match service.start() {
         Ok(()) => println!("Servicio terminado!"),

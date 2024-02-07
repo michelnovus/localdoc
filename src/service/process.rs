@@ -48,7 +48,7 @@ impl RuntimeDir {
     }
 
     /// Crea el directorio raiz de los datos del proceso en tiempo de ejecución.
-    pub fn create_root(&self) -> io::Result<()> {
+    pub fn make(&self) -> io::Result<()> {
         if self.root_directory.is_absolute() && !self.root_directory.exists() {
             fs::create_dir_all(&self.root_directory)
         } else {

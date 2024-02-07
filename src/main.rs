@@ -35,7 +35,7 @@ fn main() {
         );
         process::exit(1);
     };
-    match runtime_dir.create_root() {
+    match runtime_dir.make() {
         Ok(_) => {
             println!("Se creó el directorio: {:?}", runtime_dir.get_root());
         }
