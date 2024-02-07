@@ -2,7 +2,33 @@
 //! Comandos, respuestas y serializacion del Socket API del proceso.
 
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::{net::SocketAddrV4, path::PathBuf};
+
+/// Paquete de información sobre documentación.
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Package {
+    name: String,
+    version: String,
+    kind: DocKind,
+    /// Some(http://addr:port) o None
+    url: Option<SocketAddrV4>,
+}
+
+impl Package {
+    pub fn new(
+        name: String,
+        version: String,
+        kind: DocKind,
+        url: Option<SocketAddrV4>,
+    ) -> Self {
+        Package {
+            name,
+            version,
+            kind,
+            url,
+        }
+    }
+}
 
 /// Estado de ejecución binario, éxito o fracaso.
 #[derive(Serialize, Deserialize, Debug)]
@@ -13,7 +39,7 @@ pub enum Status {
 
 /// Define los tipos de documentación.
 #[derive(Serialize, Deserialize, Debug)]
-pub enum DocType {
+pub enum DocKind {
     /// Servir la documentación como un sitio web estático común.
     Generic,
     /// Servir la documentación mediante el motor MdBook.
@@ -30,33 +56,33 @@ pub enum Command {
     INSTALL {
         /// Ruta absoluta a la raíz del directorio de la documentación.
         target: PathBuf,
-        /// Es el tipo de docuentación, ver enum `DocType`
-        doc_type: DocType,
+        /// Es el tipo de docuentación, ver enum `DocKind`
+        kind: DocKind,
         /// El nombre que se quiere para identificar la documentación.
-        doc_name: String,
+        name: String,
         /// El número de versión de la documentación.
-        doc_version: String,
+        version: String,
     },
     /// Ordena desinstalar un paquete de documentación.
     DELETE {
         /// Nombre identificativo del paquete.
-        doc_name: String,
+        name: String,
         /// Versión del paquete.
-        doc_version: String,
+        version: String,
     },
     /// Ordena servir un paquete de documentación.
     SERVE {
         /// Nombre identificativo del paquete.
-        doc_name: String,
+        name: String,
         /// Versión del paquete.
-        doc_version: String,
+        version: String,
     },
     /// Ordena dejar de servir un paquete de documentación.
     HALT {
         /// Nombre identificativo del paquete.
-        doc_name: String,
+        name: String,
         /// Versión del paquete.
-        doc_version: String,
+        version: String,
     },
     /// Solicita toda la información de estado actual del servicio.
     STATUS,
@@ -73,6 +99,6 @@ pub enum Response {
     DELETE(Status),
     SERVE(Status),
     HALT(Status),
-    STATUS { status: Status }, //TODO: Definir la respuesta de estado.
+    STATUS(Vec<Package>),
     EXIT(Status),
 }

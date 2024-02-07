@@ -24,6 +24,16 @@ fn socket_communication_test() {
 
     {
         let mut stream = UnixStream::connect(&SOCKET).unwrap();
+        stream.write_all(r#""STATUS""#.as_bytes()).unwrap();
+        stream.shutdown(Shutdown::Write).unwrap();
+        let mut buffer = String::new();
+        stream.read_to_string(&mut buffer).unwrap();
+        stream.shutdown(Shutdown::Read).unwrap();
+        println!("{}", buffer);
+    }
+
+    {
+        let mut stream = UnixStream::connect(&SOCKET).unwrap();
         stream.write_all(r#""EXIT""#.as_bytes()).unwrap();
         stream.shutdown(Shutdown::Write).unwrap();
         let mut buffer = String::new();

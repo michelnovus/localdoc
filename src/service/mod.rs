@@ -7,8 +7,13 @@ pub mod socket;
 
 use error::{ServiceError, ServiceErrorKind};
 use process::{stop_process, RuntimeDir};
-use socket::api::{Command, Command::*, Response, Status::*};
-use std::os::unix::net::UnixListener;
+use socket::api::{
+    Command, Command::*, DocKind::*, Package, Response, Status::*,
+};
+use std::{
+    net::{Ipv4Addr, SocketAddrV4},
+    os::unix::net::UnixListener,
+};
 
 pub struct Service {
     runtime_dir: RuntimeDir,
@@ -84,43 +89,65 @@ impl Service {
         match command {
             INSTALL {
                 target,
-                doc_type,
-                doc_name,
-                doc_version,
+                kind,
+                name,
+                version,
             } => {
-                println!(
-                    "{:?}, {:?}, {:?}, {:?}",
-                    target, doc_type, doc_name, doc_version
-                );
+                println!("{:?}, {:?}, {:?}, {:?}", target, kind, name, version);
                 Err(error::ServiceError::new(
                     error::ServiceErrorKind::NotImplementedError,
                     "Testeos, nada implementado por aquí!".to_string(),
                 ))
             }
-            DELETE {
-                doc_name,
-                doc_version,
-            } => {
-                println!("{:?}, {:?}", doc_name, doc_version);
+            DELETE { name, version } => {
+                println!("{:?}, {:?}", name, version);
                 Ok(Response::DELETE(Success))
             }
-            SERVE {
-                doc_name,
-                doc_version,
-            } => {
-                println!("{:?}, {:?}", doc_name, doc_version);
+            SERVE { name, version } => {
+                println!("{:?}, {:?}", name, version);
                 Ok(Response::SERVE(Success))
             }
-            HALT {
-                doc_name,
-                doc_version,
-            } => {
-                println!("{:?}, {:?}", doc_name, doc_version);
+            HALT { name, version } => {
+                println!("{:?}, {:?}", name, version);
                 Ok(Response::HALT(Success))
             }
             STATUS => {
                 println!("{:?}", command);
-                Ok(Response::STATUS { status: Success })
+                Ok(Response::STATUS(vec![
+                    Package::new(
+                        "p1".to_string(),
+                        "1.0.8".to_string(),
+                        Generic,
+                        Some(SocketAddrV4::new(
+                            Ipv4Addr::new(127, 0, 0, 1),
+                            8080,
+                        )),
+                    ),
+                    Package::new(
+                        "p2".to_string(),
+                        "0.7.1".to_string(),
+                        Generic,
+                        None,
+                    ),
+                    Package::new(
+                        "p3".to_string(),
+                        "0.1.0".to_string(),
+                        Generic,
+                        Some("127.0.0.1:8080".parse().unwrap()),
+                    ),
+                    Package::new(
+                        "p4".to_string(),
+                        "3.2.0".to_string(),
+                        Generic,
+                        None,
+                    ),
+                    Package::new(
+                        "p5".to_string(),
+                        "8.0.9".to_string(),
+                        Generic,
+                        None,
+                    ),
+                ]))
             }
             EXIT => {
                 println!("{:?}", command);
