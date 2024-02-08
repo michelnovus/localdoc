@@ -25,7 +25,7 @@ fn main() {
     // de HOME por probable eliminación de archivos del usuario...
     if runtime_dir.get_root().unwrap().starts_with("/home") {
         eprintln!(
-            "El servicio no se puede ejecutar en los
+            "El servicio no se puede ejecutar en los \
             directorios de usuario!"
         );
         process::exit(1);
