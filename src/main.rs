@@ -14,7 +14,7 @@ fn main() {
         &env::var(ROOT_DIRECTORY_ENV_VAR).unwrap_or_else(|_| {
             resolve_root_directory().unwrap_or_else(|| {
                 eprintln!(
-                    "No se pudo resolver el directorio raíz
+                    "No se pudo resolver el directorio raíz \
                     para el proceso!"
                 );
                 process::exit(1);
