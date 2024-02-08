@@ -8,3 +8,5 @@ pub const SOCKET_NAME_ENV_VAR: &'static str = "LOCALDOC_SOCKET";
 
 /// Nombre predeterminado del socket.
 pub const SOCKET_NAME_DEFAULT: &'static str = "localdoc.socket";
+/// Nombre predeterminado de la raíz.
+pub const ROOT_DIR_NAME_DEFAULT: &'static str = "localdoc";

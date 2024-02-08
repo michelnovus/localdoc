@@ -8,12 +8,11 @@ use std::{
 };
 
 const ROOT_DIR: &'static str = "/tmp/socket_communication_test";
-const SOCK_NAME: &'static str = "socket";
-const SOCKET: &'static str = "/tmp/socket_communication_test/socket";
+const SOCKET: &'static str = "/tmp/socket_communication_test/localdoc.socket";
 
 #[test]
 fn socket_communication_test() {
-    let runtime_dir = RuntimeDir::new(&ROOT_DIR, &SOCK_NAME);
+    let runtime_dir = RuntimeDir::new(&ROOT_DIR);
     runtime_dir.make().expect("Error al crear los directorios.");
     let mut service = Service::new(runtime_dir);
     thread::spawn(move || match service.start() {
