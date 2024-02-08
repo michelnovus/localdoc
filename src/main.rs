@@ -2,10 +2,13 @@
 
 extern crate localdoc_service;
 
-use localdoc_service::service::{
-    constants::*,
-    process::{resolve_root_directory, RuntimeDir},
-    Service,
+use localdoc_service::{
+    service::{
+        constants::*,
+        process::{resolve_root_directory, RuntimeDir},
+        Service,
+    },
+    utils,
 };
 use std::{env, io, process};
 
@@ -21,6 +24,40 @@ fn main() {
             })
         })
     });
+
+    {
+        let args: Vec<String> = env::args().collect();
+        match args.get(1) {
+            Some(value) if value == &String::from("stop") => {
+                match utils::stop_service(&runtime_dir) {
+                    Ok(()) => {
+                        println!("El servicio se detuvo con éxito.");
+                        process::exit(0);
+                    }
+                    Err(err) => {
+                        eprintln!(
+                            "Error al intentar terminar el servicio: \
+                    ERROR [{}]",
+                            err.kind()
+                        );
+                        process::exit(1);
+                    }
+                }
+            }
+            Some(value) if value == &String::from("start") => {
+                println!("Iniciando servicio...");
+            }
+            Some(value) => {
+                eprintln!(r#"El argumento: "{}" no se reconoce."#, value);
+                process::exit(1);
+            }
+            None => {
+                eprintln!("No se pasaron argumentos");
+                process::exit(1);
+            }
+        }
+    };
+
     // Temporalmente no se permite ejecuar el proceso en subdirectorios
     // de HOME por probable eliminación de archivos del usuario...
     if runtime_dir.get_root().unwrap().starts_with("/home") {
