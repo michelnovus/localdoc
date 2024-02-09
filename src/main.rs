@@ -8,9 +8,16 @@ use localdoc_service::{
         process::{resolve_root_directory, RuntimeDir},
         Service,
     },
-    utils,
+    utils::{self, generate_unit_service},
 };
-use std::{env, io, process};
+use std::{
+    env,
+    fs::{self, canonicalize},
+    io::{self, prelude::*},
+    path::PathBuf,
+    process,
+};
+use users::get_current_username;
 
 fn main() {
     let runtime_dir = RuntimeDir::new({
@@ -28,7 +35,7 @@ fn main() {
     {
         let args: Vec<String> = env::args().collect();
         match args.get(1) {
-            Some(value) if value == &String::from("stop") => {
+            Some(value) if value == &String::from(ARG_STOP) => {
                 match utils::stop_service(&runtime_dir) {
                     Ok(()) => {
                         println!("El servicio se detuvo con éxito.");
@@ -44,7 +51,54 @@ fn main() {
                     }
                 }
             }
-            Some(value) if value == &String::from("start") => {
+            Some(value) if value == &String::from(ARG_GENERATE) => {
+                println!("Instalando servicio.");
+                let username = get_current_username().unwrap_or_else(|| {
+                    eprintln!("No se pudo obtener el nombre de usuario!");
+                    process::exit(1);
+                });
+                let mut systemd_user_path =
+                    String::from(SYSTEMD_USER_DIRECTORY);
+                systemd_user_path
+                    .replace_range(6..=13, &username.into_string().unwrap());
+                let systemd_user_path = PathBuf::from(systemd_user_path);
+                if !systemd_user_path.exists() {
+                    fs::create_dir_all(&systemd_user_path).unwrap_or_default();
+                }
+                let mut systemd_unit = PathBuf::from(systemd_user_path);
+                systemd_unit.push("localdoc-service.service");
+                if !systemd_unit.exists() {
+                    let mut file = fs::File::create(&systemd_unit).unwrap();
+                    let file_content = generate_unit_service(
+                        canonicalize(PathBuf::from(&args[0])).unwrap(),
+                    );
+                    file.write_all(file_content.as_bytes()).unwrap();
+                    let mut cmd = process::Command::new("/usr/bin/systemctl")
+                        .arg("--user")
+                        .arg("daemon-reload")
+                        .spawn()
+                        .unwrap_or_else(|err| {
+                            eprintln!(
+                                "No se pudo recargar systemd, error [{}]",
+                                err.kind()
+                            );
+                            process::exit(1);
+                        });
+                    cmd.wait().expect("Error al esperar a systemd.");
+                } else {
+                    eprintln!(
+                        r#"El archivo "{}" ya existe."#,
+                        systemd_unit.to_string_lossy()
+                    );
+                    process::exit(1);
+                };
+                println!(
+                    r#"Archivo unidad instalado en: "{}""#,
+                    systemd_unit.to_string_lossy()
+                );
+                process::exit(0);
+            }
+            Some(value) if value == &String::from(ARG_START) => {
                 println!("Iniciando servicio...");
             }
             Some(value) => {
