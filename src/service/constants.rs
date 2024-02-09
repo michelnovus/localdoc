@@ -10,6 +10,8 @@ pub const SOCKET_NAME_ENV_VAR: &'static str = "LOCALDOC_SOCKET";
 pub const SOCKET_NAME_DEFAULT: &'static str = "localdoc.socket";
 /// Nombre predeterminado de la raíz.
 pub const ROOT_DIR_NAME_DEFAULT: &'static str = "localdoc";
+/// Binario de systemd.
+pub const SYSTEMD_BINARY: &'static str = "/usr/bin/systemctl";
 /// Directorio de unidades de systemd.
 pub const SYSTEMD_USER_DIRECTORY: &'static str =
     "/home/USERNAME/.config/systemd/user/";

@@ -8,16 +8,9 @@ use localdoc_service::{
         process::{resolve_root_directory, RuntimeDir},
         Service,
     },
-    utils::{self, generate_unit_service},
+    utils::{self, unit_service},
 };
-use std::{
-    env,
-    fs::{self, canonicalize},
-    io::{self, prelude::*},
-    path::PathBuf,
-    process,
-};
-use users::get_current_username;
+use std::{env, fs::canonicalize, io, path::PathBuf, process};
 
 fn main() {
     let runtime_dir = RuntimeDir::new({
@@ -32,6 +25,8 @@ fn main() {
         })
     });
 
+    let mut fork_process = false;
+
     {
         let args: Vec<String> = env::args().collect();
         match args.get(1) {
@@ -43,63 +38,66 @@ fn main() {
                     }
                     Err(err) => {
                         eprintln!(
-                            "Error al intentar terminar el servicio: \
-                    ERROR [{}]",
+                            "No se pudo detener el servicio, es probable \
+                            que no se estuviera ejecutando.\n\
+                            ERROR: [{:?}]",
                             err.kind()
                         );
-                        process::exit(1);
+                        process::exit(0);
                     }
                 }
             }
             Some(value) if value == &String::from(ARG_GENERATE) => {
                 println!("Instalando servicio.");
-                let username = get_current_username().unwrap_or_else(|| {
-                    eprintln!("No se pudo obtener el nombre de usuario!");
-                    process::exit(1);
-                });
-                let mut systemd_user_path =
-                    String::from(SYSTEMD_USER_DIRECTORY);
-                systemd_user_path
-                    .replace_range(6..=13, &username.into_string().unwrap());
-                let systemd_user_path = PathBuf::from(systemd_user_path);
-                if !systemd_user_path.exists() {
-                    fs::create_dir_all(&systemd_user_path).unwrap_or_default();
-                }
-                let mut systemd_unit = PathBuf::from(systemd_user_path);
-                systemd_unit.push("localdoc-service.service");
-                if !systemd_unit.exists() {
-                    let mut file = fs::File::create(&systemd_unit).unwrap();
-                    let file_content = generate_unit_service(
-                        canonicalize(PathBuf::from(&args[0])).unwrap(),
-                    );
-                    file.write_all(file_content.as_bytes()).unwrap();
-                    let mut cmd = process::Command::new("/usr/bin/systemctl")
-                        .arg("--user")
-                        .arg("daemon-reload")
-                        .spawn()
-                        .unwrap_or_else(|err| {
-                            eprintln!(
-                                "No se pudo recargar systemd, error [{}]",
-                                err.kind()
-                            );
-                            process::exit(1);
-                        });
-                    cmd.wait().expect("Error al esperar a systemd.");
-                } else {
-                    eprintln!(
-                        r#"El archivo "{}" ya existe."#,
-                        systemd_unit.to_string_lossy()
-                    );
-                    process::exit(1);
+                match unit_service::generate_unit_service(
+                    canonicalize(PathBuf::from(&args[0])).unwrap(),
+                ) {
+                    Ok(()) => (),
+                    Err(unit_service::Error::GetUsernameError) => {
+                        eprintln!("No se pudo obtener el nombre de usuario!");
+                        process::exit(1);
+                    }
+                    Err(unit_service::Error::CreateDirError) => {
+                        eprintln!(
+                            "No se pudo crear el direcotorio \
+                            de unidades de systemd del usuario!"
+                        );
+                        process::exit(1);
+                    }
+                    Err(unit_service::Error::CreateUnitError) => {
+                        eprintln!(
+                            "Algo salió mal en la crearción de la unidad \
+                            de systemd."
+                        );
+                        process::exit(1);
+                    }
+                    Err(unit_service::Error::UnitAlreadyExistsError) => {
+                        eprintln!(
+                            "La unidad localdoc-service.service ya existe."
+                        );
+                        process::exit(1);
+                    }
+                    Err(_) => (),
                 };
                 println!(
-                    r#"Archivo unidad instalado en: "{}""#,
-                    systemd_unit.to_string_lossy()
+                    r#"Archivo unidad "localdoc-service.service" instalado"#
                 );
+                println!(
+                    "Intentando recargar unidades del usuario de systemd."
+                );
+                if let Err(unit_service::Error::SystemdReloadError) =
+                    unit_service::reload_systemd_units()
+                {
+                    eprintln!("Error al intentar recargar las unidades.");
+                    process::exit(1);
+                };
+                println!("Las unidades se recargaron con éxito!");
                 process::exit(0);
             }
             Some(value) if value == &String::from(ARG_START) => {
-                println!("Iniciando servicio...");
+                if args.get(2) == Some(&"--fork".to_string()) {
+                    fork_process = true;
+                };
             }
             Some(value) => {
                 eprintln!(r#"El argumento: "{}" no se reconoce."#, value);
@@ -123,7 +121,10 @@ fn main() {
     };
     match runtime_dir.make() {
         Ok(_) => {
-            println!("Se creó el directorio: {:?}", runtime_dir.get_root());
+            println!(
+                "Se creó el directorio: {:?}",
+                runtime_dir.get_root().unwrap()
+            );
         }
         Err(err) if err.kind() == io::ErrorKind::PermissionDenied => {
             eprintln!(
@@ -133,15 +134,29 @@ fn main() {
             process::exit(1);
         }
         Err(err) if err.kind() == io::ErrorKind::AlreadyExists => {
-            eprintln!("El directorio: {:?} ya existe", runtime_dir.get_root());
+            eprintln!(
+                "El directorio: {:?} ya existe.\nParece que se está \
+                ejecutando otra instancia del programa.",
+                runtime_dir.get_root().unwrap()
+            );
             process::exit(1);
         }
         Err(err) => panic!("Error indeterminado: {:#?}", err),
     };
 
-    let mut service = Service::new(runtime_dir);
-    match service.start() {
-        Ok(()) => println!("Servicio terminado con éxito!"),
-        Err(_) => println!("Error calamitoso, saliendo..."),
-    };
+    if fork_process {
+        if let Ok(fork::Fork::Child) = fork::daemon(false, false) {
+            process::Command::new(env::current_exe().unwrap())
+                .arg("start")
+                .output()
+                .expect("Error en bifurcar.");
+        }
+    } else {
+        println!("Iniciando servicio...");
+        let mut service = Service::new(runtime_dir);
+        match service.start() {
+            Ok(()) => println!("Servicio terminado con éxito!"),
+            Err(_) => println!("Error calamitoso, saliendo..."),
+        };
+    }
 }
