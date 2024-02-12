@@ -7,7 +7,8 @@ use std::{io, io::prelude::*, net::Shutdown, os::unix::net::UnixStream};
 
 /// Envia la señal `EXIT` al socket, para detener el servicio desde el exterior.
 pub fn stop_service(runtime_dir: &RuntimeDir) -> io::Result<()> {
-    let mut stream = UnixStream::connect(runtime_dir.get_socket().unwrap())?;
+    let mut stream =
+        UnixStream::connect(runtime_dir.get_socket_path().unwrap())?;
     {
         let command = serde_json::to_string(&Command::EXIT)?;
         stream.write_all(command.as_bytes())?;

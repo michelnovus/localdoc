@@ -7,17 +7,15 @@ use crate::constants::{ROOT_DIR_NAME_DEFAULT, SOCKET_NAME_DEFAULT};
 use std::{fs, io, os::unix::fs::PermissionsExt, path::PathBuf};
 use users::{get_current_uid, get_user_by_uid};
 
-/// Resuelve la localización del directorio raíz del proceso en el sistema de archivos.
+/// Busca el directorio /run/user/$UID en el sistema de archivos.
 ///
 /// La función busca el `UID` del usuario activo y generar la ruta
-/// `/run/user/$UID/localdoc` envolviendola con `Option::Some()`.
-pub fn resolve_root_directory() -> Option<String> {
+/// `/run/user/$UID` envolviendola con `Option::Some()` si existe.
+fn resolve_user_run_dir() -> Option<String> {
     match get_user_by_uid(get_current_uid()) {
         Some(data) => {
             let uid = data.uid();
-            Some(String::from(format!(
-                "/run/user/{uid}/{ROOT_DIR_NAME_DEFAULT}"
-            )))
+            Some(String::from(format!("/run/user/{uid}")))
         }
         None => None,
     }
@@ -36,18 +34,42 @@ pub fn stop_process(response: &Response) -> bool {
 pub struct RuntimeDir {
     root_directory: PathBuf,
     socket_path: PathBuf,
-    served_packages: PathBuf,
+    served_doc_path: PathBuf,
 }
 
 impl RuntimeDir {
-    pub fn new(dirpath: &str) -> RuntimeDir {
-        RuntimeDir {
-            root_directory: PathBuf::from(dirpath),
-            served_packages: PathBuf::from(&format!("{dirpath}/served")),
-            socket_path: PathBuf::from(&format!(
-                "{dirpath}/{SOCKET_NAME_DEFAULT}"
+    pub fn new() -> io::Result<RuntimeDir> {
+        let user_run_dir = match resolve_user_run_dir() {
+            Some(value) => value,
+            None => {
+                return Err(io::Error::new(
+                    io::ErrorKind::NotFound,
+                    "No se pudo resolver el directorio /run del usuario",
+                ))
+            }
+        };
+        let root_directory = format!("{user_run_dir}/{ROOT_DIR_NAME_DEFAULT}");
+
+        Ok(RuntimeDir {
+            root_directory: PathBuf::from(&root_directory),
+            served_doc_path: PathBuf::from(&format!(
+                "{root_directory}/served_doc"
             )),
-        }
+            socket_path: PathBuf::from(&format!(
+                "{root_directory}/{SOCKET_NAME_DEFAULT}"
+            )),
+        })
+    }
+
+    /// Comprueba si el directorio raíz existe.
+    ///
+    /// Si el directorio existe es por dos motivos:
+    /// - Ya hay un servicio de Localdoc en ejecución
+    /// - Existió en algún momento un servicio de Localdoc activo pero
+    /// terminó de forma abrupta (mediante un SIGKILL por ejemplo) y no
+    /// liberó recursos
+    pub fn exists(&self) -> bool {
+        self.root_directory.exists()
     }
 
     /// Crea el directorio raiz de los datos del proceso en tiempo de ejecución.
@@ -58,17 +80,22 @@ impl RuntimeDir {
                 .permissions()
                 .set_mode(0o700);
         }
-        fs::create_dir(&self.served_packages)?;
+        fs::create_dir(&self.served_doc_path)?;
         Ok(())
     }
 
     /// Devuelve la ruta absoluta al socket del proceso.
-    pub fn get_socket(&self) -> Option<&PathBuf> {
+    pub fn get_socket_path(&self) -> Option<&PathBuf> {
         Some(&self.socket_path)
     }
 
     /// Devuelve la ruta absoluta al directorio raíz del proceso.
-    pub fn get_root(&self) -> Option<&PathBuf> {
+    pub fn get_root_path(&self) -> Option<&PathBuf> {
+        Some(&self.root_directory)
+    }
+
+    /// Devuelve la ruta absoluta al directorio de documentación servida.
+    pub fn get_served_doc_path(&self) -> Option<&PathBuf> {
         Some(&self.root_directory)
     }
 }
@@ -78,11 +105,11 @@ impl Drop for RuntimeDir {
         fs::remove_file(&self.socket_path).unwrap_or_else(|err| {
             eprintln!("DROP ERROR [{:?}]: {:?}", err.kind(), &self.socket_path,)
         });
-        fs::remove_dir(&self.served_packages).unwrap_or_else(|err| {
+        fs::remove_dir(&self.served_doc_path).unwrap_or_else(|err| {
             eprintln!(
                 "DROP ERROR [{:?}]: {:?}",
                 err.kind(),
-                &self.served_packages,
+                &self.served_doc_path,
             )
         });
         fs::remove_dir(&self.root_directory).unwrap_or_else(|err| {
