@@ -1,5 +1,5 @@
 [package]
-name = "localdocctl"
+name = "lodoctl"
 description = "Interfaz de consola para interactuar con el servicio en segundo plano."
 version = "0.1.0"
 authors.workspace = true
@@ -12,4 +12,4 @@ publish.workspace = true
 
 [dependencies]
 fork = "0.1.23"
-localdoclib = { path = "../localdoclib" }
+lodolib = { path = "../lodolib" }

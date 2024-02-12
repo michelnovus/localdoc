@@ -24,15 +24,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9c198f91728a82281a64e1f4f9eeb25d82cb32a5de251c6bd1b5154d63a8e7bd"
 
 [[package]]
-name = "localdocctl"
+name = "lodoctl"
 version = "0.1.0"
 dependencies = [
  "fork",
- "localdoclib",
+ "lodolib",
 ]
 
 [[package]]
-name = "localdoclib"
+name = "lodolib"
 version = "0.1.0"
 dependencies = [
  "serde",
@@ -41,11 +41,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "localdocsrv"
+name = "lodosrv"
 version = "0.1.0"
 dependencies = [
  "fork",
- "localdoclib",
+ "lodolib",
 ]
 
 [[package]]

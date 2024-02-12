@@ -1,15 +1,12 @@
 // [MIT License] Copyright (c) 2024 Michel Novus
 
-extern crate localdoclib;
-
-use localdoclib::{
-    service::{
-        constants::*,
-        process::{resolve_root_directory, RuntimeDir},
-        Service,
-    },
-    utils::{self, unit_service},
+extern crate lodolib;
+use lodolib::utils::{self, unit_service};
+use lodolib::{
+    constants::*,
+    process::{resolve_root_directory, RuntimeDir},
 };
+use lodosrv::service::Service;
 use std::{env, fs::canonicalize, io, path::PathBuf, process};
 
 fn main() {

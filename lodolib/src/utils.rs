@@ -1,6 +1,7 @@
 // [MIT License] Copyright (c) 2024 Michel Novus
 
-use crate::service::{process::RuntimeDir, socket::api::Command};
+use crate::api::Command;
+use crate::process::RuntimeDir;
 use serde_json;
 use std::{io, io::prelude::*, net::Shutdown, os::unix::net::UnixStream};
 
@@ -23,7 +24,7 @@ pub fn stop_service(runtime_dir: &RuntimeDir) -> io::Result<()> {
 
 /// Genera el la unidad servicio de systemd.
 pub mod unit_service {
-    use crate::service::constants::{
+    use crate::constants::{
         ARG_START, ARG_STOP, SYSTEMD_BINARY, SYSTEMD_USER_DIRECTORY,
     };
     use std::{fs, io::prelude::*, path::PathBuf, process};

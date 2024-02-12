@@ -1,5 +1,5 @@
 [package]
-name = "localdocsrv"
+name = "lodosrv"
 description = "Servicio servidor de localdoc, se ejecuta en segundo plano."
 version = "0.1.0"
 authors.workspace = true
@@ -11,5 +11,5 @@ keywords.workspace = true
 publish.workspace = true
 
 [dependencies]
-localdoclib = { path = "../localdoclib" }
+lodolib = { path = "../lodolib" }
 fork = "0.1.23"

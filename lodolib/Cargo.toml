@@ -1,5 +1,5 @@
 [package]
-name = "localdoclib"
+name = "lodolib"
 description = "Biblioteca de Localdoc."
 version = "0.1.0"
 authors.workspace = true

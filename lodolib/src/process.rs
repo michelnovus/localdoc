@@ -2,10 +2,8 @@
 //! Se definen funciones y estructuras necesarias en el arranque de
 //! un nuevo proceso.
 
-use crate::service::{
-    constants::{ROOT_DIR_NAME_DEFAULT, SOCKET_NAME_DEFAULT},
-    socket::api::{Response, Response::EXIT, Status::Success},
-};
+use crate::api::{Response, Response::EXIT, Status::Success};
+use crate::constants::{ROOT_DIR_NAME_DEFAULT, SOCKET_NAME_DEFAULT};
 use std::{fs, io, os::unix::fs::PermissionsExt, path::PathBuf};
 use users::{get_current_uid, get_user_by_uid};
 

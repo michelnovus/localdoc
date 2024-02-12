@@ -1,15 +1,14 @@
 // [MIT License] Copyright (c) 2024 Michel Novus
 
-pub mod constants;
+extern crate lodolib;
 pub mod error;
-pub mod process;
-pub mod socket;
 
 use error::{ServiceError, ServiceErrorKind};
-use process::{stop_process, RuntimeDir};
-use socket::api::{
+use lodolib::api::{
     Command, Command::*, DocKind::*, Package, Response, Status::*,
 };
+use lodolib::process::{stop_process, RuntimeDir};
+use lodolib::socket;
 use std::{
     net::{Ipv4Addr, SocketAddrV4},
     os::unix::net::UnixListener,

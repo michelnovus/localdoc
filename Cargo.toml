@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["localdocctl", "localdoclib", "localdocsrv"]
+members = ["lodoctl", "lodolib", "lodosrv"]
 
 [workspace.package]
 authors = ["Michel Novus <michelnovus@gmail.com>"]
