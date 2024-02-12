@@ -1,8 +1,8 @@
 // [MIT License] Copyright (c) 2024 Michel Novus
 
-extern crate localdoc_service;
+extern crate localdoclib;
 
-use localdoc_service::{
+use localdoclib::{
     service::{
         constants::*,
         process::{resolve_root_directory, RuntimeDir},

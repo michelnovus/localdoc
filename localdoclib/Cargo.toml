@@ -1,0 +1,18 @@
+[package]
+name = "localdoclib"
+version = "0.1.0"
+authors = ["Michel Novus <michelnovus@gmail.com>"]
+description = ""
+readme = "README.md"
+repository = "https://github.com/michelnovus/localdoc-service"
+license = "MIT"
+edition = "2021"
+keywords = ["service", "server", "documentation"]
+
+publish = false
+
+
+[dependencies]
+users = "0.11.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
