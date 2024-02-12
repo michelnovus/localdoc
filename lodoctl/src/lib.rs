@@ -16,6 +16,11 @@ pub mod print {
     /// Imprime el típico mensaje de ayuda.
     pub fn help(app_path: &PathBuf) {
         println!(
+            "`lodoctl` brinda una interfaz en consola para
+            \rla comunicación con el servicio `lodosrv`."
+        );
+        println!();
+        println!(
             "uso: {} {{comando}} [argumento, ...]",
             app_path.file_name().unwrap().to_string_lossy()
         );

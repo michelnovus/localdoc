@@ -13,6 +13,9 @@ fn main() {
         Some(value_version) if value_version == &"--version".to_string() => {
             print::version(&app_path)
         }
+        Some(value_help) if value_help == &"--help".to_string() => {
+            print::help(&app_path)
+        }
         Some(value_unknown) => {
             print::unknown_cmd(value_unknown);
             print::help(&app_path);
