@@ -5,17 +5,30 @@
 use crate::api::{Response, Response::EXIT, Status::Success};
 use crate::constants::{ROOT_DIR_NAME_DEFAULT, SOCKET_NAME_DEFAULT};
 use std::{fs, io, os::unix::fs::PermissionsExt, path::PathBuf};
-use users::{get_current_uid, get_user_by_uid};
+use users;
 
 /// Busca el directorio /run/user/$UID en el sistema de archivos.
 ///
 /// La función busca el `UID` del usuario activo y generar la ruta
 /// `/run/user/$UID` envolviendola con `Option::Some()` si existe.
 fn resolve_user_run_dir() -> Option<String> {
-    match get_user_by_uid(get_current_uid()) {
+    match users::get_user_by_uid(users::get_current_uid()) {
         Some(data) => {
             let uid = data.uid();
             Some(String::from(format!("/run/user/{uid}")))
+        }
+        None => None,
+    }
+}
+/// Busca el directorio /home/$USERNAME/.local/ en el sistema de archivos.
+///
+/// La función busca el `USERNAME` del usuario activo y generar la ruta
+/// `/home/$USERNAME/.local/` envolviendola con `Option::Some()` si existe.
+pub fn resolve_user_local_dir() -> Option<String> {
+    match users::get_current_username() {
+        Some(data) => {
+            let username = data.to_string_lossy();
+            Some(String::from(format!("/home/{username}/.local")))
         }
         None => None,
     }
@@ -32,6 +45,7 @@ pub fn stop_process(response: &Response) -> bool {
 
 /// Representa el directorio en tiempo de ejecución del proceso.
 pub struct RuntimeDir {
+    allow_drop: bool,
     root_directory: PathBuf,
     socket_path: PathBuf,
     served_doc_path: PathBuf,
@@ -58,6 +72,7 @@ impl RuntimeDir {
             socket_path: PathBuf::from(&format!(
                 "{root_directory}/{SOCKET_NAME_DEFAULT}"
             )),
+            allow_drop: false,
         })
     }
 
@@ -73,7 +88,7 @@ impl RuntimeDir {
     }
 
     /// Crea el directorio raiz de los datos del proceso en tiempo de ejecución.
-    pub fn make(&self) -> io::Result<()> {
+    pub fn make(&mut self) -> io::Result<()> {
         if self.root_directory.is_absolute() && !self.root_directory.exists() {
             fs::create_dir_all(&self.root_directory)?;
             fs::metadata(&self.root_directory)?
@@ -81,6 +96,7 @@ impl RuntimeDir {
                 .set_mode(0o700);
         }
         fs::create_dir(&self.served_doc_path)?;
+        self.allow_drop = true;
         Ok(())
     }
 
@@ -102,22 +118,28 @@ impl RuntimeDir {
 
 impl Drop for RuntimeDir {
     fn drop(&mut self) {
-        fs::remove_file(&self.socket_path).unwrap_or_else(|err| {
-            eprintln!("DROP ERROR [{:?}]: {:?}", err.kind(), &self.socket_path,)
-        });
-        fs::remove_dir(&self.served_doc_path).unwrap_or_else(|err| {
-            eprintln!(
-                "DROP ERROR [{:?}]: {:?}",
-                err.kind(),
-                &self.served_doc_path,
-            )
-        });
-        fs::remove_dir(&self.root_directory).unwrap_or_else(|err| {
-            eprintln!(
-                "DROP ERROR [{:?}]: {:?}",
-                err.kind(),
-                &self.root_directory,
-            )
-        });
+        if self.allow_drop {
+            fs::remove_file(&self.socket_path).unwrap_or_else(|err| {
+                eprintln!(
+                    "DROP ERROR [{:?}]: {:?}",
+                    err.kind(),
+                    &self.socket_path,
+                )
+            });
+            fs::remove_dir(&self.served_doc_path).unwrap_or_else(|err| {
+                eprintln!(
+                    "DROP ERROR [{:?}]: {:?}",
+                    err.kind(),
+                    &self.served_doc_path,
+                )
+            });
+            fs::remove_dir(&self.root_directory).unwrap_or_else(|err| {
+                eprintln!(
+                    "DROP ERROR [{:?}]: {:?}",
+                    err.kind(),
+                    &self.root_directory,
+                )
+            });
+        }
     }
 }
