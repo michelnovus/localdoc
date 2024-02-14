@@ -26,8 +26,10 @@ pub mod print {
         );
         println!();
         println!("Comandos:");
-        println!("    --help            Imprime esta ayuda");
-        println!("    --version         Muestra la versión actual");
+        println!("    start           intenta iniciar el servicio");
+        println!("    stop            intenta detiener el servicio");
+        println!("  --help            imprime esta ayuda");
+        println!("  --version         muestra la versión actual");
     }
 
     /// Imprime una línea que avisa de un comando inválido.
