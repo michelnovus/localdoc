@@ -5,11 +5,11 @@ pub mod print {
     use std::path::PathBuf;
 
     /// Imprime una línea con el nombre del programa y su versión.
-    pub fn version(app_path: &PathBuf) {
+    pub fn version(app_path: &PathBuf, version: &str) {
         println!(
             "{} {}",
             app_path.file_name().unwrap().to_string_lossy(),
-            env!("CARGO_PKG_VERSION")
+            version
         );
     }
 

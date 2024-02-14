@@ -14,13 +14,15 @@ use std::process;
 
 /// Contiene solo los valores de `release` o `debug`.
 const PROFILE: &'static str = env!("PROFILE_TYPE");
+/// Contiene la versión definida según el crate.
+const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
 fn main() {
     let args: Vec<String> = env::args().collect();
     let app_path = PathBuf::from(&args[0]);
     match args.get(1) {
         Some(value_version) if value_version == &"--version".to_string() => {
-            print::version(&app_path)
+            print::version(&app_path, &VERSION)
         }
         Some(value_help) if value_help == &"--help".to_string() => {
             print::help(&app_path)
@@ -33,7 +35,7 @@ fn main() {
             if runtime_dir.exists() {
                 println!(
                     "Parece que ya se está ejecutando el servicio
-                    `lodosrv`, cancelando..."
+                    `lodosrv`..."
                 );
                 process::exit(1);
             } else {
@@ -43,7 +45,14 @@ fn main() {
                     // es false cambia la ruta del programa hijo a la raíz.
                     if let Ok(fork::Fork::Child) = fork::daemon(false, true) {
                         process::Command::new("/usr/bin/echo")
-                            .arg("Implementar lodosrv.")
+                            .arg("En modo debug. Terminando.")
+                            .spawn()
+                            .expect("Error en bifurcar.");
+                    }
+                } else if PROFILE == "release" {
+                    if let Ok(fork::Fork::Child) = fork::daemon(false, true) {
+                        process::Command::new("/usr/bin/echo")
+                            .arg("En modo release. Terminando.")
                             .spawn()
                             .expect("Error en bifurcar.");
                     }
@@ -63,7 +72,7 @@ fn main() {
                 );
                 process::exit(1);
             });
-            println!("Servicio detenido con éxito!");
+            println!("El servicio finalizó con éxito!");
         }
         Some(value_unknown) => {
             print::unknown_cmd(value_unknown);
