@@ -3,39 +3,10 @@
 //! un nuevo proceso.
 
 use crate::api::{Response, Response::EXIT, Status::Success};
-use crate::constants::{ROOT_DIR_NAME_DEFAULT, SOCKET_NAME_DEFAULT};
 use std::{fs, io, os::unix::fs::PermissionsExt, path::PathBuf};
-use users;
-
-/// Busca el directorio /run/user/$UID en el sistema de archivos.
-///
-/// La función busca el `UID` del usuario activo y generar la ruta
-/// `/run/user/$UID` envolviendola con `Option::Some()` si existe.
-fn resolve_user_run_dir() -> Option<String> {
-    match users::get_user_by_uid(users::get_current_uid()) {
-        Some(data) => {
-            let uid = data.uid();
-            Some(String::from(format!("/run/user/{uid}")))
-        }
-        None => None,
-    }
-}
-/// Busca el directorio /home/$USERNAME/.local/ en el sistema de archivos.
-///
-/// La función busca el `USERNAME` del usuario activo y generar la ruta
-/// `/home/$USERNAME/.local/` envolviendola con `Option::Some()` si existe.
-pub fn resolve_user_local_dir() -> Option<String> {
-    match users::get_current_username() {
-        Some(data) => {
-            let username = data.to_string_lossy();
-            Some(String::from(format!("/home/{username}/.local")))
-        }
-        None => None,
-    }
-}
 
 /// Comprueba si `response` es el valor `EXIT(Success)`.
-pub fn stop_process(response: &Response) -> bool {
+pub fn is_stop_command(response: &Response) -> bool {
     if let EXIT(Success) = response {
         true
     } else {
@@ -43,80 +14,141 @@ pub fn stop_process(response: &Response) -> bool {
     }
 }
 
-/// Representa el directorio en tiempo de ejecución del proceso.
-pub struct RuntimeDir {
+/// Representa los archivos y directorios del programa en el
+/// sistema de ficheros del host.
+pub struct AppFiles {
+    /// Habilita la limpieza del directorio runtime del proceso.
     allow_drop: bool,
-    root_directory: PathBuf,
+
+    /// Directorio de activos del proceso.
+    runtime_dir_path: PathBuf,
+    /// Directorio de documentación servida en curso.
+    served_dir_path: PathBuf,
+    /// Directorio de paquetes de documentación almacenada en disco.
+    packages_path: PathBuf,
+
+    /// Archivo socket del proceso.
     socket_path: PathBuf,
-    served_doc_path: PathBuf,
+    /// Archivo de metadatos de los paquetes en `packages_path`.
+    packages_meta_path: PathBuf,
+    /// Archivo binario del servicio `lodosrv`.
+    service_bin_path: Option<PathBuf>,
+    /// Listado de posibles rutas al binario de `lodosrv`.
+    service_bin_default_paths: Vec<PathBuf>,
 }
 
-impl RuntimeDir {
-    pub fn new() -> io::Result<RuntimeDir> {
-        let user_run_dir = match resolve_user_run_dir() {
-            Some(value) => value,
+impl AppFiles {
+    pub fn new() -> io::Result<Self> {
+        let runtime_dir = match dirs::runtime_dir() {
+            Some(mut directory) => {
+                directory.push("localdoc");
+                directory
+            }
             None => {
                 return Err(io::Error::new(
                     io::ErrorKind::NotFound,
-                    "No se pudo resolver el directorio /run del usuario",
+                    "no se pudo obtener el directorio runtime del usuario",
                 ))
             }
         };
-        let root_directory = format!("{user_run_dir}/{ROOT_DIR_NAME_DEFAULT}");
-
-        Ok(RuntimeDir {
-            root_directory: PathBuf::from(&root_directory),
-            served_doc_path: PathBuf::from(&format!(
-                "{root_directory}/served_doc"
-            )),
-            socket_path: PathBuf::from(&format!(
-                "{root_directory}/{SOCKET_NAME_DEFAULT}"
-            )),
+        let persistent_dir =
+            match dirs::data_local_dir() {
+                Some(mut directory) => {
+                    directory.push("localdoc");
+                    directory
+                }
+                None => return Err(io::Error::new(
+                    io::ErrorKind::NotFound,
+                    "no se pudo obtener el directorio local share del usuario",
+                )),
+            };
+        Ok(AppFiles {
             allow_drop: false,
+            runtime_dir_path: runtime_dir.clone(),
+            served_dir_path: {
+                let mut path = PathBuf::from(runtime_dir.clone());
+                path.push("packages");
+                path
+            },
+            packages_path: {
+                let mut path = PathBuf::from(persistent_dir.clone());
+                path.push("packages");
+                path
+            },
+            socket_path: {
+                let mut path = PathBuf::from(runtime_dir.clone());
+                path.push("localdoc.socket");
+                path
+            },
+            packages_meta_path: {
+                let mut path = PathBuf::from(persistent_dir.clone());
+                path.push("packages.json");
+                path
+            },
+            service_bin_path: None,
+            service_bin_default_paths: vec![],
         })
     }
 
-    /// Comprueba si el directorio raíz existe.
-    ///
-    /// Si el directorio existe es por dos motivos:
-    /// - Ya hay un servicio de Localdoc en ejecución
-    /// - Existió en algún momento un servicio de Localdoc activo pero
-    /// terminó de forma abrupta (mediante un SIGKILL por ejemplo) y no
-    /// liberó recursos
-    pub fn exists(&self) -> bool {
-        self.root_directory.exists()
+    pub fn get_socket_path(&self) -> Option<&PathBuf> {
+        if self.socket_path.exists() {
+            Some(&self.socket_path)
+        } else {
+            None
+        }
     }
 
-    /// Crea el directorio raiz de los datos del proceso en tiempo de ejecución.
-    pub fn make(&mut self) -> io::Result<()> {
-        if self.root_directory.is_absolute() && !self.root_directory.exists() {
-            fs::create_dir_all(&self.root_directory)?;
-            fs::metadata(&self.root_directory)?
+    /// Asigna una lista de posibles rutas al binario de `lodosrv`.
+    pub fn set_default_service_bin_paths(&mut self, defaults: Vec<PathBuf>) {
+        self.service_bin_default_paths.clear();
+        self.service_bin_default_paths.extend(defaults);
+    }
+
+    /// Devuelve la ruta absoluta del binario de `lodosrv` si existe.
+    pub fn get_service_bin_path(&self) -> Option<&PathBuf> {
+        if self.service_bin_path.is_some_and(|path| path.exists()) {
+            self.service_bin_path.as_ref()
+        } else {
+            let mut iter =
+                self.service_bin_default_paths.iter().filter_map(|path| {
+                    if path.exists() {
+                        Some(path.clone())
+                    } else {
+                        None
+                    }
+                });
+            self.service_bin_path = iter.next();
+            self.service_bin_path.as_ref()
+        }
+    }
+
+    /// Crea el subdirectorio `localdoc` y su contenido en el
+    /// runtime_dir del usuario.
+    ///
+    /// Si la función se ejecuta con éxito, permitirá al borrow checker
+    /// eliminal todo el contenido generado en `runtime_dir/localdoc`.
+    pub fn create_runtime(&mut self) -> io::Result<()> {
+        if self.runtime_dir_path.exists() {
+            Err(io::Error::new(
+                io::ErrorKind::AlreadyExists,
+                format!(
+                    "El directorio `{}` ya existe",
+                    &self.runtime_dir_path.to_string_lossy()
+                ),
+            ))
+        } else {
+            fs::create_dir_all(&self.runtime_dir_path)?;
+            fs::metadata(&self.runtime_dir_path)?
                 .permissions()
                 .set_mode(0o700);
+            fs::create_dir(&self.served_dir_path)?;
+            self.allow_drop = true;
+            Ok(())
         }
-        fs::create_dir(&self.served_doc_path)?;
-        self.allow_drop = true;
-        Ok(())
-    }
-
-    /// Devuelve la ruta absoluta al socket del proceso.
-    pub fn get_socket_path(&self) -> Option<&PathBuf> {
-        Some(&self.socket_path)
-    }
-
-    /// Devuelve la ruta absoluta al directorio raíz del proceso.
-    pub fn get_root_path(&self) -> Option<&PathBuf> {
-        Some(&self.root_directory)
-    }
-
-    /// Devuelve la ruta absoluta al directorio de documentación servida.
-    pub fn get_served_doc_path(&self) -> Option<&PathBuf> {
-        Some(&self.root_directory)
     }
 }
 
-impl Drop for RuntimeDir {
+impl std::ops::Drop for AppFiles {
     fn drop(&mut self) {
         if self.allow_drop {
             fs::remove_file(&self.socket_path).unwrap_or_else(|err| {
@@ -126,20 +158,20 @@ impl Drop for RuntimeDir {
                     &self.socket_path,
                 )
             });
-            fs::remove_dir(&self.served_doc_path).unwrap_or_else(|err| {
+            fs::remove_dir_all(&self.served_dir_path).unwrap_or_else(|err| {
                 eprintln!(
                     "DROP ERROR [{:?}]: {:?}",
                     err.kind(),
-                    &self.served_doc_path,
+                    &self.served_dir_path,
                 )
             });
-            fs::remove_dir(&self.root_directory).unwrap_or_else(|err| {
+            fs::remove_dir(&self.runtime_dir_path).unwrap_or_else(|err| {
                 eprintln!(
                     "DROP ERROR [{:?}]: {:?}",
                     err.kind(),
-                    &self.root_directory,
+                    &self.runtime_dir_path,
                 )
             });
-        }
+        };
     }
 }
